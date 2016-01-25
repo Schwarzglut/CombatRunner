@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class MovementScript : MonoBehaviour {
-    private float moveSpeed, lerpTime, rateOfLerp;
+    private float moveSpeed, lerpTime, rateOfLerp, disBeforeComplete;
     private bool isLerping;
     // Use this for initialization
     PlatformsMovement platMove = new PlatformsMovement();
@@ -17,57 +17,60 @@ public class MovementScript : MonoBehaviour {
         newPosition = new Vector3();
         // Lerping variables
         lerpTime = 0.0f;
-        rateOfLerp = 0.8f;
+        rateOfLerp = 1f;
+        disBeforeComplete = 0.1f;
         isLerping = false;
     }
 
     // Update is called once per frame
     void Update() {
-        Debug.Log("Player position: " + transform.position);
+        // Putting the call in update makes player movement faster.
+        Movement();
     }
     void FixedUpdate()
     {
-        Movement();
     }
     void Movement()
     {
         // Jump right and forward
-        if (Input.GetKeyDown(KeyCode.D) && Input.GetKeyDown(KeyCode.W) && !isLerping)
+        if (Input.GetKeyDown(KeyCode.D) && !isLerping && transform.position.x <= 0)
         {
             isLerping = true;
+            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z + 4);
             StartCoroutine(LerpTowards(newPosition, 3));
         }
         // Jump left and forward
-        else if (Input.GetKeyDown(KeyCode.A) && Input.GetKeyDown(KeyCode.W) && !isLerping)
+        else if (Input.GetKeyDown(KeyCode.A) && !isLerping && transform.position.x >= 0)
         {
             isLerping = true;
+            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z + 4);
             StartCoroutine(LerpTowards(newPosition, 4));
         }
-        // Jump right
-        else if (Input.GetKeyDown(KeyCode.D) && !isLerping)
+        /*// Jump right
+        else if (Input.GetKeyDown(KeyCode.D) && !isLerping && transform.position.x <= 0)
         {
             isLerping = true;
             newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z);
             StartCoroutine(LerpTowards(newPosition, 0));
         }
         // Jump left
-        else if (Input.GetKeyDown(KeyCode.A) && !isLerping)
+        else if (Input.GetKeyDown(KeyCode.A) && !isLerping && transform.position.x >= 0)
         {
             isLerping = true;
             newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z);
             StartCoroutine(LerpTowards(newPosition, 1));
-        }
+        }*/
         // Jump forward
         else if (Input.GetKeyDown(KeyCode.W) && !isLerping)
         {
             isLerping = true;
+            // NOTE: Possibly move the movelastrow into the lerptowards coroutine.
+            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z + 4);
-            platMove.MoveLastRow(newPosition);
             StartCoroutine(LerpTowards(newPosition, 2));
         }
-
     }
     // COROUTINES
     public IEnumerator LerpTowards(Vector3 towardsPosition, int direction)
@@ -75,19 +78,19 @@ public class MovementScript : MonoBehaviour {
         // Directions: 0 == LEFT, 1 == RIGHT, 2 == FORWARD, 3 == RIGHT FORWARD, 4 == LEFT FORWARD
         while (isLerping)
         {
-            //Debug.Log("Lerping like a fucker");
             lerpTime += Time.deltaTime * rateOfLerp;
             transform.position = Vector3.Lerp(transform.position, towardsPosition, lerpTime);
-            if ((transform.position.x >= towardsPosition.x - 0.05f && direction == 0) || 
-                (transform.position.x <= towardsPosition.x + 0.05f && direction == 1) ||  
-                (transform.position.z >= towardsPosition.z - 0.05f && direction == 2) || 
-                (transform.position.x <= towardsPosition.x + 0.05f && transform.position.z >= towardsPosition.z - 0.05f && direction == 3) ||
-                (transform.position.x >= towardsPosition.x - 0.05f && transform.position.z >= towardsPosition.z - 0.05f && direction == 4))
+            if ((transform.position.x >= towardsPosition.x - disBeforeComplete && direction == 0) ||
+                (transform.position.x <= towardsPosition.x + disBeforeComplete && direction == 1) ||
+                (transform.position.z >= towardsPosition.z - disBeforeComplete && direction == 2) ||
+                (transform.position.x <= towardsPosition.x + disBeforeComplete && transform.position.z >= towardsPosition.z - disBeforeComplete && direction == 3) ||
+                (transform.position.x >= towardsPosition.x - disBeforeComplete && transform.position.z >= towardsPosition.z - disBeforeComplete && direction == 4))
             {
+                // If the player is close enough to the final destination set the position.
+                // NOTE: Fire a raycast to check if the player position is over a platform or not.
                 transform.position = towardsPosition;
                 isLerping = false;
                 lerpTime = 0;
-                StopCoroutine(LerpTowards(newPosition, direction));
             }
             yield return new WaitForSeconds(0);
         }

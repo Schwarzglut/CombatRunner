@@ -14,12 +14,13 @@ public class PlatformsMovement : MonoBehaviour {
     // Platform generation variables
     int randomPlatformNumber, unactivePlatformTracker, platformChosen;
     bool isFirstPlatformActive;
+    int newPlatformStartPoint;
     // Use this for initialization
     void Start () {
         // Grab the platforms and assign them to the array of game objects, listOfPlatforms
         listOfPlatforms = GameObject.FindGameObjectWithTag("platforms");
         // Populate and initialize the array of platforms
-        platforms = new GameObject[15];
+        platforms = new GameObject[18];
         populatePlatforms();
         counter = 0; 
         // The time the player has to move to the next platform.
@@ -40,6 +41,7 @@ public class PlatformsMovement : MonoBehaviour {
         unactivePlatformTracker = 0;
         isFirstPlatformActive = false;
         platformChosen = 0;
+        newPlatformStartPoint = 0;
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -48,7 +50,6 @@ public class PlatformsMovement : MonoBehaviour {
 	void Update () {
         //MovePlatforms();
         //counter++;
-        Debug.Log("Platform position: " + platforms[0].transform.position);
     }
     void FixedUpdate()
     {
@@ -71,7 +72,7 @@ public class PlatformsMovement : MonoBehaviour {
     }
     void populatePlatforms()
     {
-        for (int i =0; i < 15; i++)
+        for (int i =0; i < 18; i++)
         {
             platforms[i] = listOfPlatforms.transform.GetChild(i).gameObject;
             platforms[i].gameObject.SetActive(false);
@@ -95,36 +96,57 @@ public class PlatformsMovement : MonoBehaviour {
         {
             randomPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
             platforms[randomPlatformNumber].gameObject.SetActive(true);
-            //Debug.Log("Holy Shit look at me::::: " + randomPlatformNumber);
             GeneratePlatforms(randomPlatformNumber);
             isFirstPlatformActive = true;
         }
     }
     void GeneratePlatforms(int newPlatformNumber)
     {
-        // PROBLEM: Less than 12 only works for the first round of gereration,
+        // PROBLEM: Less than 15 only works for the first round of gereration,
         // Changes need for when old platforms must loop back around
-        if (newPlatformNumber <= 12)
+        if (newPlatformNumber <= 14)
         {
             if (platforms[newPlatformNumber].gameObject.tag == "left")
             {
                 newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(2, 4));
-                platforms[newPlatformNumber].gameObject.SetActive(true);
-                GeneratePlatforms(newPlatformNumber);
             }
             else if (platforms[newPlatformNumber].gameObject.tag == "right")
             {
                 newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(3, 5));
-                platforms[newPlatformNumber].gameObject.SetActive(true);
-                GeneratePlatforms(newPlatformNumber);
             }
             else if (platforms[newPlatformNumber].gameObject.tag == "center")
             {
                 newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(2, 5));
-                platforms[newPlatformNumber].gameObject.SetActive(true);
-                GeneratePlatforms(newPlatformNumber);
             }
+            platforms[newPlatformNumber].gameObject.SetActive(true);
+            GeneratePlatforms(newPlatformNumber);
         }
+        else
+        {
+            newPlatformStartPoint = newPlatformNumber - 15;
+        }
+    }
+    void GeneratePlatformLoop(GameObject[] goArray, int newPlatformNumber)
+    {
+        int temp = 0;
+        if (newPlatformNumber == 0)
+        {
+            temp = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
+        }
+        else if (newPlatformNumber == 1)
+        {
+            temp = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
+        }
+        else if (newPlatformNumber == 2)
+        {
+            temp = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
+        }
+        goArray[temp].gameObject.SetActive(true);
+        newPlatformStartPoint = temp;
+    }
+    void setLastRowActive(GameObject go, bool isActive)
+    {
+        go.SetActive(isActive);
     }
     // !!------ PUBLIC FUNCTIONS ------!!
     public void MovePlatformsOverwrite()
@@ -136,18 +158,26 @@ public class PlatformsMovement : MonoBehaviour {
         }
     }
     // Move the 3 platforms behind the player to the front
-    public void MoveLastRow(Vector3 playerPosition)
+    public IEnumerator MoveLastRow(Vector3 playerPosition)
     {
-        Vector3 newRowPosition = playerPosition;
-        ArrayList listOfGameObjects = new ArrayList(platforms);
-        for(int i = 0; i < listOfGameObjects.Capacity; i++)
+        GameObject[] lastRow = new GameObject[3];
+        for(int i = 2; i < platforms.Length; i+=3)
         {
-            // LOOK UP HOW TO .GET IN AN ARRAYLIST
-            if (listOfGameObjects)
-            {
-                // Reset the position of the 3 gameobjects behind the player to be at the front
-                
+            // Finding the platforms behind the player.
+            if (platforms[i].gameObject.transform.position.z < playerPosition.z) {
+                // Reset the platform position to be 20 units infront of the player.
+                int placer = 0;
+                for (int j = i-2; j <= i; j++) {
+                    platforms[j].gameObject.transform.position = new Vector3(platforms[j].gameObject.transform.position.x, 
+                                                                             platforms[j].gameObject.transform.position.y, 
+                                                                             platforms[j].gameObject.transform.position.z + 24);
+                    setLastRowActive(platforms[j], false);
+                    lastRow[placer] = platforms[j];
+                    placer++;
+                } 
             }
         }
+        GeneratePlatformLoop(lastRow, newPlatformStartPoint);
+        yield return new WaitForSeconds(0);
     }
 }
