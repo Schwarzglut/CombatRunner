@@ -6,6 +6,8 @@ public class PlatformsMovement : MonoBehaviour {
     private float counter, timeToMeet, moveSpeed;
     private GameObject listOfPlatforms;
     private GameObject[] platforms;
+    // An array holding the positions of the platforms before they move
+    private Vector3[] platformsOrgPosition;
     // START of LERP variables
     bool isLerping, isLerpingLeft, isLerpingRight;
     Vector3 newPosition, newPositionSideways;
@@ -15,12 +17,17 @@ public class PlatformsMovement : MonoBehaviour {
     int randomPlatformNumber, unactivePlatformTracker, platformChosen;
     bool isFirstPlatformActive;
     int newPlatformStartPoint;
+
+    MovementScript ms;
     // Use this for initialization
     void Start () {
+        // Linking the scripts
+        MovementScript ms = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
         // Grab the platforms and assign them to the array of game objects, listOfPlatforms
         listOfPlatforms = GameObject.FindGameObjectWithTag("platforms");
         // Populate and initialize the array of platforms
         platforms = new GameObject[18];
+        platformsOrgPosition = new Vector3[18];
         populatePlatforms();
         counter = 0; 
         // The time the player has to move to the next platform.
@@ -45,11 +52,12 @@ public class PlatformsMovement : MonoBehaviour {
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
+
+        // Subscribe to event
+        Subscribe(ms);
     }
 	// Update is called once per frame
 	void Update () {
-        //MovePlatforms();
-        //counter++;
     }
     void FixedUpdate()
     {
@@ -75,6 +83,7 @@ public class PlatformsMovement : MonoBehaviour {
         for (int i =0; i < 18; i++)
         {
             platforms[i] = listOfPlatforms.transform.GetChild(i).gameObject;
+            platformsOrgPosition[i] = platforms[i].transform.position;
             platforms[i].gameObject.SetActive(false);
         }
     }
@@ -148,6 +157,23 @@ public class PlatformsMovement : MonoBehaviour {
     {
         go.SetActive(isActive);
     }
+    void ResetPlatforms()
+    {
+        // Set the platforms back to the stored original positions.
+        for (int i = 0; i < platforms.Length; i++)
+        {
+            platforms[i].transform.position = platformsOrgPosition[i];
+            platforms[i].gameObject.SetActive(false);
+        }
+        // Choosing platforms variables.
+        randomPlatformNumber = -1;
+        unactivePlatformTracker = 0;
+        isFirstPlatformActive = false;
+        platformChosen = 0;
+        newPlatformStartPoint = 0;
+        // Generating the platforms again.
+        GeneratePlatforms();
+    }
     // !!------ PUBLIC FUNCTIONS ------!!
     public void MovePlatformsOverwrite()
     {
@@ -161,10 +187,10 @@ public class PlatformsMovement : MonoBehaviour {
     public IEnumerator MoveLastRow(Vector3 playerPosition)
     {
         GameObject[] lastRow = new GameObject[3];
-        for(int i = 2; i < platforms.Length; i+=3)
+        for (int i = 2; i < platforms.Length; i+=3)
         {
             // Finding the platforms behind the player.
-            if (platforms[i].gameObject.transform.position.z < playerPosition.z) {
+            if (platforms[i].gameObject.transform.position.z+1 < playerPosition.z) {
                 // Reset the platform position to be 20 units infront of the player.
                 int placer = 0;
                 for (int j = i-2; j <= i; j++) {
@@ -177,7 +203,18 @@ public class PlatformsMovement : MonoBehaviour {
                 } 
             }
         }
-        GeneratePlatformLoop(lastRow, newPlatformStartPoint);
+        if (lastRow[0] != null)
+        {
+            GeneratePlatformLoop(lastRow, newPlatformStartPoint);
+        }
         yield return new WaitForSeconds(0);
+    }
+    public void Subscribe(MovementScript ms)
+    {
+        ms.Reset += new MovementScript.ResetHandler(ResetPlatforms);
+    }
+    public void Unsubscribe(MovementScript ms)
+    {
+        ms.Reset -= new MovementScript.ResetHandler(ResetPlatforms);
     }
 }

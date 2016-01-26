@@ -4,11 +4,19 @@ using System.Collections;
 public class MovementScript : MonoBehaviour {
     private float moveSpeed, lerpTime, rateOfLerp, disBeforeComplete;
     private bool isLerping;
-    // Use this for initialization
-    PlatformsMovement platMove = new PlatformsMovement();
+    // Use this for initialization 
     // Lerping and coroutine variables
     Vector3 newPosition;
 
+    // EVENTS
+    // Reset level events
+    public event ResetHandler Reset;
+    public delegate void ResetHandler();
+    // Increase score events
+    public event ScoreHandler Score;
+    public delegate void ScoreHandler();
+
+    PlatformsMovement platMove;
     void Start() {
         // Grabbing the PlatformsMovement script from the Platforms game object
         moveSpeed = 4.0f;
@@ -36,7 +44,7 @@ public class MovementScript : MonoBehaviour {
         if (Input.GetKeyDown(KeyCode.D) && !isLerping && transform.position.x <= 0)
         {
             isLerping = true;
-            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
+            //platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z + 4);
             StartCoroutine(LerpTowards(newPosition, 3));
         }
@@ -44,9 +52,18 @@ public class MovementScript : MonoBehaviour {
         else if (Input.GetKeyDown(KeyCode.A) && !isLerping && transform.position.x >= 0)
         {
             isLerping = true;
-            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
+            //platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z + 4);
             StartCoroutine(LerpTowards(newPosition, 4));
+        }
+        // Jump forward
+        else if (Input.GetKeyDown(KeyCode.W) && !isLerping)
+        {
+            isLerping = true;
+            // NOTE: Possibly move the movelastrow into the lerptowards coroutine.
+            //platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
+            newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z + 4);
+            StartCoroutine(LerpTowards(newPosition, 2));
         }
         /*// Jump right
         else if (Input.GetKeyDown(KeyCode.D) && !isLerping && transform.position.x <= 0)
@@ -62,16 +79,32 @@ public class MovementScript : MonoBehaviour {
             newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z);
             StartCoroutine(LerpTowards(newPosition, 1));
         }*/
-        // Jump forward
-        else if (Input.GetKeyDown(KeyCode.W) && !isLerping)
+    }
+    // Fire raycast to check if player has jumped onto a platform
+    void CheckPlatformLanded()
+    {
+        RaycastHit hit = new RaycastHit();
+        if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
         {
-            isLerping = true;
-            // NOTE: Possibly move the movelastrow into the lerptowards coroutine.
-            platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
-            newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z + 4);
-            StartCoroutine(LerpTowards(newPosition, 2));
+            if (Reset != null) {
+                Reset();
+            }
+            ResetLevel();
+        }
+        else if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
+        {
+            if (Score != null)
+            {
+                Score();
+            }
         }
     }
+    // Resets player and platforms positions and generates them again.
+    void ResetLevel()
+    {
+        transform.position = new Vector3(0,1,0);
+    }
+    // !!------ PUBLIC FUNCTIONS ------!!
     // COROUTINES
     public IEnumerator LerpTowards(Vector3 towardsPosition, int direction)
     {
@@ -89,8 +122,11 @@ public class MovementScript : MonoBehaviour {
                 // If the player is close enough to the final destination set the position.
                 // NOTE: Fire a raycast to check if the player position is over a platform or not.
                 transform.position = towardsPosition;
+                CheckPlatformLanded();
                 isLerping = false;
                 lerpTime = 0;
+                // Called after the position is set to speed up movement.
+                platMove.StartCoroutine(platMove.MoveLastRow(transform.position));
             }
             yield return new WaitForSeconds(0);
         }
