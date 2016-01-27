@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class MovementScript : MonoBehaviour {
-    private float moveSpeed, lerpTime, rateOfLerp, disBeforeComplete;
+    private float lerpTime, rateOfLerp, disBeforeComplete;
     private bool isLerping;
     // Use this for initialization 
     // Lerping and coroutine variables
@@ -16,10 +16,10 @@ public class MovementScript : MonoBehaviour {
     public event ScoreHandler Score;
     public delegate void ScoreHandler();
 
+    // Player colour variables
+    Color playerColour;
     PlatformsMovement platMove;
     void Start() {
-        // Grabbing the PlatformsMovement script from the Platforms game object
-        moveSpeed = 4.0f;
         platMove = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
         // Initializing newPosition for use with movement
         newPosition = new Vector3();
@@ -28,6 +28,8 @@ public class MovementScript : MonoBehaviour {
         rateOfLerp = 1f;
         disBeforeComplete = 0.1f;
         isLerping = false;
+        // Player colour intialization
+        playerColour = new Color(0,0,0,0);
     }
 
     // Update is called once per frame
@@ -65,20 +67,6 @@ public class MovementScript : MonoBehaviour {
             newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z + 4);
             StartCoroutine(LerpTowards(newPosition, 2));
         }
-        /*// Jump right
-        else if (Input.GetKeyDown(KeyCode.D) && !isLerping && transform.position.x <= 0)
-        {
-            isLerping = true;
-            newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z);
-            StartCoroutine(LerpTowards(newPosition, 0));
-        }
-        // Jump left
-        else if (Input.GetKeyDown(KeyCode.A) && !isLerping && transform.position.x >= 0)
-        {
-            isLerping = true;
-            newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z);
-            StartCoroutine(LerpTowards(newPosition, 1));
-        }*/
     }
     // Fire raycast to check if player has jumped onto a platform
     void CheckPlatformLanded()
@@ -86,6 +74,7 @@ public class MovementScript : MonoBehaviour {
         RaycastHit hit = new RaycastHit();
         if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
         {
+            // If the event has a listener fire the event.
             if (Reset != null) {
                 Reset();
             }
@@ -93,6 +82,7 @@ public class MovementScript : MonoBehaviour {
         }
         else if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
         {
+            // If the event has a listener fire the event.
             if (Score != null)
             {
                 Score();

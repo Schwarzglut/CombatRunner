@@ -3,21 +3,16 @@ using System.Collections;
 using System;
 
 public class PlatformsMovement : MonoBehaviour {
-    private float counter, timeToMeet, moveSpeed;
+    private float counter;
     private GameObject listOfPlatforms;
     private GameObject[] platforms;
     // An array holding the positions of the platforms before they move
     private Vector3[] platformsOrgPosition;
-    // START of LERP variables
-    bool isLerping, isLerpingLeft, isLerpingRight;
-    Vector3 newPosition, newPositionSideways;
-    float lerpTime, rateOfLerp, lerpTimeRight, lerpTimeLeft;
-    // END of LERP variables
     // Platform generation variables
-    int randomPlatformNumber, unactivePlatformTracker, platformChosen;
     bool isFirstPlatformActive;
     int newPlatformStartPoint;
-
+    // Colour platform variables
+    Color platformColour;
     MovementScript ms;
     // Use this for initialization
     void Start () {
@@ -30,25 +25,11 @@ public class PlatformsMovement : MonoBehaviour {
         platformsOrgPosition = new Vector3[18];
         populatePlatforms();
         counter = 0; 
-        // The time the player has to move to the next platform.
-        timeToMeet = 100f;
-        // Setting the move speed
-        moveSpeed = 4.0f;
-        // Lerping variables
-        isLerping = false; isLerpingLeft = false; isLerpingRight = false;
-        lerpTime = 0.0f;
-        lerpTimeRight = 0.0f;
-        lerpTimeLeft = 0.0f;
-        rateOfLerp = 0.5f;
-        // Setting the positions for platform movement
-        newPosition = transform.position;
-        newPositionSideways = transform.position;
         // Choosing platforms variables
-        randomPlatformNumber = -1;
-        unactivePlatformTracker = 0;
         isFirstPlatformActive = false;
-        platformChosen = 0;
         newPlatformStartPoint = 0;
+        // Colour platform variable initialization
+        platformColour = new Color(0,0,0,0);
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -61,22 +42,12 @@ public class PlatformsMovement : MonoBehaviour {
     }
     void FixedUpdate()
     {
-        // Back up to make sure the lerping variables are reset.
-        if (transform.position == getNewPosition())
-        {
-            isLerpingRight = false; isLerpingLeft = false; isLerping = false;
-        }
     }
     // USER DEFINED FUNCTIONS
     // Keeping variables indepedent from coroutines with a function to set counter
     void setCounter(float newValue)
     {
         counter = newValue;
-    }
-    // Get the new position for use inside coroutines
-    Vector3 getNewPosition()
-    {
-        return new Vector3(newPositionSideways.x, newPositionSideways.y, newPosition.z);
     }
     void populatePlatforms()
     {
@@ -87,28 +58,18 @@ public class PlatformsMovement : MonoBehaviour {
             platforms[i].gameObject.SetActive(false);
         }
     }
-    // Automatically move the platforms backwards after a certain time
-    void MovePlatforms()
-    {
-        if (counter >= timeToMeet && !isLerping)
-        {
-            newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z - 4);
-            //StartCoroutine(LerpBackwards());
-            isLerping = true;
-        }
-    }
     // Generating platforms, making them visible or invisible
     void GeneratePlatforms()
     {
         // INDEPENDENT
         if (!isFirstPlatformActive)
         {
-            randomPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
-            platforms[randomPlatformNumber].gameObject.SetActive(true);
-            GeneratePlatforms(randomPlatformNumber);
+            platforms[1].gameObject.SetActive(true);
+            GeneratePlatforms(1);
             isFirstPlatformActive = true;
         }
     }
+    // Generate the platform locations
     void GeneratePlatforms(int newPlatformNumber)
     {
         // PROBLEM: Less than 15 only works for the first round of gereration,
@@ -135,6 +96,7 @@ public class PlatformsMovement : MonoBehaviour {
             newPlatformStartPoint = newPlatformNumber - 15;
         }
     }
+    // A function that saves the position that the next row will be
     void GeneratePlatformLoop(GameObject[] goArray, int newPlatformNumber)
     {
         int temp = 0;
@@ -153,6 +115,12 @@ public class PlatformsMovement : MonoBehaviour {
         goArray[temp].gameObject.SetActive(true);
         newPlatformStartPoint = temp;
     }
+    // A function to set the colour of the platform
+    void GeneratePlatformColour(int platform)
+    {
+        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
+        platforms[platform].GetComponent<Renderer>().material.SetColor(0, Color.red);
+    }
     void setLastRowActive(GameObject go, bool isActive)
     {
         go.SetActive(isActive);
@@ -166,23 +134,12 @@ public class PlatformsMovement : MonoBehaviour {
             platforms[i].gameObject.SetActive(false);
         }
         // Choosing platforms variables.
-        randomPlatformNumber = -1;
-        unactivePlatformTracker = 0;
         isFirstPlatformActive = false;
-        platformChosen = 0;
         newPlatformStartPoint = 0;
         // Generating the platforms again.
         GeneratePlatforms();
     }
     // !!------ PUBLIC FUNCTIONS ------!!
-    public void MovePlatformsOverwrite()
-    {
-        if (!isLerping && !isLerpingLeft && !isLerpingRight) {
-            newPosition = new Vector3(newPositionSideways.x, newPositionSideways.y, transform.position.z - 4);
-            //StartCoroutine(LerpBackwards());
-            isLerping = true;
-        }
-    }
     // Move the 3 platforms behind the player to the front
     public IEnumerator MoveLastRow(Vector3 playerPosition)
     {
@@ -209,10 +166,13 @@ public class PlatformsMovement : MonoBehaviour {
         }
         yield return new WaitForSeconds(0);
     }
+    // SUBSCRIPTIONS
+    // Subscribe to reset event
     public void Subscribe(MovementScript ms)
     {
         ms.Reset += new MovementScript.ResetHandler(ResetPlatforms);
     }
+    // Unsubscribe (unsubscribe if listener outlives event caller to break link for garbage collection)
     public void Unsubscribe(MovementScript ms)
     {
         ms.Reset -= new MovementScript.ResetHandler(ResetPlatforms);
