@@ -28,6 +28,7 @@ public class PlatformsMovement : MonoBehaviour {
     private bool isLerping;
     private Vector3 newPosition;
     private Vector3 orgPosition;
+    private Vector3 leftPosition, centerPosition, rightPosition;
     // Use this for initialization
     void Start () {
         // Linking the scripts
@@ -57,6 +58,9 @@ public class PlatformsMovement : MonoBehaviour {
         isLerping = false;
         newPosition = new Vector3(0,0,0);
         orgPosition = listOfPlatforms[0].transform.position;
+        leftPosition = new Vector3(listOfPlatforms[0].transform.position.x + 4, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
+        centerPosition = new Vector3(listOfPlatforms[0].transform.position.x, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
+        rightPosition = new Vector3(listOfPlatforms[0].transform.position.x - 4, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -100,21 +104,21 @@ public class PlatformsMovement : MonoBehaviour {
             if (newPlatformNumber == 0)
             {
                 newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
-                newPlatformPosition = new Vector3(orgPosition.x + 4, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
+                newPlatformPosition = new Vector3(leftPosition.x, leftPosition.y, listOfPlatforms[i].gameObject.transform.position.z); ;
             }
             else if (newPlatformNumber == 1)
             {
                 newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
-                newPlatformPosition = new Vector3(orgPosition.x, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
+                newPlatformPosition = new Vector3(centerPosition.x, centerPosition.y, listOfPlatforms[i].gameObject.transform.position.z); ;
             }
             else if (newPlatformNumber == 2)
             {
                 newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
-                newPlatformPosition = new Vector3(orgPosition.x - 4, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
+                newPlatformPosition = new Vector3(rightPosition.x, rightPosition.y, listOfPlatforms[i].gameObject.transform.position.z); ;
             }
             // Set the choosen next platform to active.
             listOfPlatforms[i].gameObject.SetActive(true);
-            listOfPlatforms[i].gameObject.transform.position = newPlatformPosition;
+            listOfPlatforms[i].gameObject.transform.localPosition = newPlatformPosition;
             // Set the choosen next platform to the generated platform type.
             listOfPlatforms[i].transform.GetChild(type).gameObject.SetActive(true);
             // If the platform is an encampment disable the coin.
@@ -130,34 +134,32 @@ public class PlatformsMovement : MonoBehaviour {
     // A function that saves the position that the next row will be
     void GeneratePlatformLoop(GameObject go, int newPlatformNumber, int position)
     {
-        Debug.Log("New number: " + newPlatformNumber);
         // nextRowPlatform is a variable that holds a value between 0 to 2 for the next rows platform.
         int nextRowPlatform = 0;
         Vector3 newPlatformPosition = new Vector3(0, 0, 0);
         if (newPlatformNumber == 0)
         {
             nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
-            newPlatformPosition = new Vector3(orgPosition.x + 4, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
+            newPlatformPosition = new Vector3(leftPosition.x, leftPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
         else if (newPlatformNumber == 1)
         {
             nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
-            newPlatformPosition = new Vector3(orgPosition.x, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
+            newPlatformPosition = new Vector3(centerPosition.x, centerPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
         else if (newPlatformNumber == 2)
         {
             nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
-            newPlatformPosition = new Vector3(orgPosition.x - 4, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
+            newPlatformPosition = new Vector3(rightPosition.x, rightPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
         // Set the choosen next platform to active.
         go.SetActive(true);
         // Give the gameobject its new position.
-        go.transform.position = newPlatformPosition;
+        go.transform.localPosition = newPlatformPosition;
         // Set the choosen next platform to the generated platform type.
         go.transform.GetChild(ChooseNextTileType(platformType)).gameObject.SetActive(true);
         // Set the new starting point for next row generation.
         newPlatformStartPoint = nextRowPlatform;
-        Debug.Log("New position: " + nextRowPlatform);
     }
     // Function that reset the positions of object and score and basically starts the level again
     // NOTE:NOTE:NOTE: Possibly update this, as when player dies there will be a shop screen, add something that pauses the game
@@ -315,22 +317,25 @@ public class PlatformsMovement : MonoBehaviour {
     // Move the 3 platforms behind the player to the front
     public void MoveLastRow()
     {
+        Debug.Log("Calling the function");
         GameObject lastPlatform = null;
         Vector3 playerPosition = new Vector3(0,1,0);
         int position = 0;
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < listOfPlatforms.Length; i++)
         {
-            if (listOfPlatforms[i].gameObject.transform.position.z + 1 < playerPosition.z)
+            /*// UPDATE MOVEMENT SO THAT THE PLATFORMS ALL MOVE INSTEAD OF THE PARENT OBJECT
+            if (listOfPlatforms[i].gameObject.transform.localPosition.z >= playerPosition.z)
             {
+                Debug.Log("Entered the loop");
                 listOfPlatforms[i].gameObject.SetActive(false);
                 listOfPlatforms[i].gameObject.transform.position = new Vector3(listOfPlatforms[i].gameObject.transform.position.x,
                                                                              listOfPlatforms[i].gameObject.transform.position.y,
-                                                                             listOfPlatforms[i].gameObject.transform.position.z + 24);
+                                                                             listOfPlatforms[i].gameObject.transform.localPosition.z + 24);
                 lastPlatform = listOfPlatforms[i].gameObject;
                 ResetChildren(lastPlatform);
                 position = i;
                 break;
-            }
+            }*/
         }
         if (lastPlatform != null)
         {
