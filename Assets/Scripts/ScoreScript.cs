@@ -46,7 +46,6 @@ public class ScoreScript : MonoBehaviour {
             {
                 Streak();
             }
-            //SetDropStreakAmount();
             score += streakAmount;
         }
         scoreValue.GetComponent<TextMesh>().text = score.ToString();

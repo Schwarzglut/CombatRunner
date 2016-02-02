@@ -46,7 +46,6 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\Scripts\MovementScript.cs" />
-     <Compile Include="Assets\Scripts\PlatformHealthScript.cs" />
      <Compile Include="Assets\Scripts\PlatformsMovement.cs" />
      <Compile Include="Assets\Scripts\ScoreScript.cs" />
      <Compile Include="Assets\Scripts\StreakBonusFall.cs" />

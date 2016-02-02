@@ -3,16 +3,15 @@ using System.Collections;
 using System;
 
 public class PlatformsMovement : MonoBehaviour {
-    private float counter;
-    private GameObject listOfPlatforms;
-    private GameObject[] platforms;
+    private GameObject platforms;
+    private GameObject[] listOfPlatforms;
     // An array holding the positions of the platforms before they move
     private Vector3[] platformsOrgPosition;
+
     // Platform generation variables
     bool isFirstPlatformActive;
     int newPlatformStartPoint;
-    // Colour platform variables
-    Color platformColour;
+
     MovementScript ms;
     // Tile type variables
     private int normalTileCount;
@@ -20,28 +19,44 @@ public class PlatformsMovement : MonoBehaviour {
     private int platformType;
     private int encampmentChance;
     private int normalChance;
+    private int maxEncampmentCount;
+
+    // Lerping variables
+    private float lerpTime;
+    private float rateOfLerp;
+    private float disBeforeComplete;
+    private bool isLerping;
+    private Vector3 newPosition;
+    private Vector3 orgPosition;
     // Use this for initialization
     void Start () {
         // Linking the scripts
-        MovementScript ms = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
+        ms = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
         // Grab the platforms and assign them to the array of game objects, listOfPlatforms
-        listOfPlatforms = GameObject.FindGameObjectWithTag("platforms");
+        platforms = GameObject.FindGameObjectWithTag("platforms");
         // Populate and initialize the array of platforms
-        platforms = new GameObject[18];
-        platformsOrgPosition = new Vector3[18];
-        populatePlatforms();
-        counter = 0; 
+        listOfPlatforms = new GameObject[6];
+        platformsOrgPosition = new Vector3[6];
+        // Fill the listOfPlatforms array with the children of platforms
+        PopulatePlatforms();
         // Choosing platforms variables
         isFirstPlatformActive = false;
         newPlatformStartPoint = 0;
-        // Colour platform variable initialization
-        platformColour = new Color(0,0,0,0);
         // Platform type variable initialization
         normalTileCount = 0;
         encampmentTileCount = 0;
         platformType = 0;
         encampmentChance = 0;
-        normalChance = 0;
+        normalChance = 90;
+        // Chance this variable for difficulty
+        maxEncampmentCount = 3;
+        // Lerp variable initialization
+        lerpTime = 0;
+        rateOfLerp = 1f;
+        disBeforeComplete = 0.1f;
+        isLerping = false;
+        newPosition = new Vector3(0,0,0);
+        orgPosition = listOfPlatforms[0].transform.position;
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -49,19 +64,18 @@ public class PlatformsMovement : MonoBehaviour {
         // Subscribe to event
         Subscribe(ms);
     }
-    // USER DEFINED FUNCTIONS
-    // Keeping variables indepedent from coroutines with a function to set counter
-    void setCounter(float newValue)
+    void Update()
     {
-        counter = newValue;
+        Movement();
     }
-    void populatePlatforms()
+    // USER DEFINED FUNCTIONS
+    void PopulatePlatforms()
     {
-        for (int i =0; i < 18; i++)
+        for (int i =0; i < listOfPlatforms.Length; i++)
         {
-            platforms[i] = listOfPlatforms.transform.GetChild(i).gameObject;
-            platformsOrgPosition[i] = platforms[i].transform.position;
-            platforms[i].gameObject.SetActive(false);
+            listOfPlatforms[i] = platforms.transform.GetChild(i).gameObject;
+            platformsOrgPosition[i] = listOfPlatforms[i].transform.position;
+            listOfPlatforms[i].gameObject.SetActive(false);
         }
     }
     // Generating platforms, making them visible or invisible
@@ -70,179 +84,258 @@ public class PlatformsMovement : MonoBehaviour {
         // INDEPENDENT
         if (!isFirstPlatformActive)
         {
-            platforms[1].gameObject.SetActive(true);
-            GeneratePlatforms(1);
+            listOfPlatforms[1].gameObject.SetActive(true);
+            GeneratePlatforms(1, 0);
             isFirstPlatformActive = true;
         }
     }
     // Generate the platform locations
-    void GeneratePlatforms(int newPlatformNumber)
+    void GeneratePlatforms(int newPlatformNumber, int type)
     {
-        // Generate the random number for the platform type to be made.
-        int platformType = Mathf.RoundToInt(UnityEngine.Random.Range(0,4));
-        // PROBLEM: Less than 15 only works for the first round of gereration,
-        // Changes need for when old platforms must loop back around.
-        if (newPlatformNumber <= 14)
+        // REPLACE RECURSION WITH FOR LOOP
+        for (int  i = 0; i < listOfPlatforms.Length; i++)
         {
-            if (platforms[newPlatformNumber].gameObject.tag == "left")
+            // 0 == right, 1 == center, 2 == left.
+            Vector3 newPlatformPosition = new Vector3(0,0,0);
+            if (newPlatformNumber == 0)
             {
-                newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(2, 4));
+                newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
+                newPlatformPosition = new Vector3(orgPosition.x + 4, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
             }
-            else if (platforms[newPlatformNumber].gameObject.tag == "right")
+            else if (newPlatformNumber == 1)
             {
-                newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(3, 5));
+                newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
+                newPlatformPosition = new Vector3(orgPosition.x, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
             }
-            else if (platforms[newPlatformNumber].gameObject.tag == "center")
+            else if (newPlatformNumber == 2)
             {
-                newPlatformNumber += Mathf.RoundToInt(UnityEngine.Random.Range(2, 5));
+                newPlatformNumber = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
+                newPlatformPosition = new Vector3(orgPosition.x - 4, orgPosition.y, listOfPlatforms[i].gameObject.transform.position.z);
             }
-            platforms[newPlatformNumber].gameObject.SetActive(true);
-            platforms[newPlatformNumber].transform.GetChild(platformType).gameObject.SetActive(true);
-            GeneratePlatforms(newPlatformNumber);
+            // Set the choosen next platform to active.
+            listOfPlatforms[i].gameObject.SetActive(true);
+            listOfPlatforms[i].gameObject.transform.position = newPlatformPosition;
+            // Set the choosen next platform to the generated platform type.
+            listOfPlatforms[i].transform.GetChild(type).gameObject.SetActive(true);
+            // If the platform is an encampment disable the coin.
+            if (type != 0)
+            {
+                listOfPlatforms[i].transform.GetChild(4).gameObject.SetActive(false);
+            }
+            // Set the next type.
+            type = ChooseNextTileType(type);
         }
-        else
-        {
-            newPlatformStartPoint = newPlatformNumber - 15;
-        }
+        newPlatformStartPoint = newPlatformNumber;
     }
     // A function that saves the position that the next row will be
-    void GeneratePlatformLoop(GameObject[] goArray, int newPlatformNumber)
+    void GeneratePlatformLoop(GameObject go, int newPlatformNumber, int position)
     {
-        // Generate the random number for the platform type to be made.
-        int platformType = Mathf.RoundToInt(UnityEngine.Random.Range(0, 4));
-        int temp = 0;
+        Debug.Log("New number: " + newPlatformNumber);
+        // nextRowPlatform is a variable that holds a value between 0 to 2 for the next rows platform.
+        int nextRowPlatform = 0;
+        Vector3 newPlatformPosition = new Vector3(0, 0, 0);
         if (newPlatformNumber == 0)
         {
-            temp = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
+            nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(0, 2));
+            newPlatformPosition = new Vector3(orgPosition.x + 4, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
         else if (newPlatformNumber == 1)
         {
-            temp = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
+            nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(0, 3));
+            newPlatformPosition = new Vector3(orgPosition.x, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
         else if (newPlatformNumber == 2)
         {
-            temp = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
+            nextRowPlatform = Mathf.RoundToInt(UnityEngine.Random.Range(1, 3));
+            newPlatformPosition = new Vector3(orgPosition.x - 4, orgPosition.y, listOfPlatforms[position].gameObject.transform.position.z);
         }
-        goArray[temp].gameObject.SetActive(true);
-        goArray[temp].transform.GetChild(platformType).gameObject.SetActive(true);
-        newPlatformStartPoint = temp;
+        // Set the choosen next platform to active.
+        go.SetActive(true);
+        // Give the gameobject its new position.
+        go.transform.position = newPlatformPosition;
+        // Set the choosen next platform to the generated platform type.
+        go.transform.GetChild(ChooseNextTileType(platformType)).gameObject.SetActive(true);
+        // Set the new starting point for next row generation.
+        newPlatformStartPoint = nextRowPlatform;
+        Debug.Log("New position: " + nextRowPlatform);
     }
-    // POSSIBLY IGNORE THIS WHOLE THING <<<<<<<
-    // A function to set the colour of the platform
-    void GeneratePlatformColour(int platform)
-    {
-        // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-        platforms[platform].GetComponent<Renderer>().material.SetColor(0, Color.red);
-    }
-    // >>>>>>>
-    void setLastRowActive(GameObject go, bool isActive)
-    {
-        // Loop through the children of the gameobect and set them to false.
-        for (int i = 0; i < 4; i++)
-        {
-            go.transform.GetChild(i).gameObject.SetActive(isActive);
-        }
-        go.SetActive(isActive);
-    }
-    void ResetPlatforms()
+    // Function that reset the positions of object and score and basically starts the level again
+    // NOTE:NOTE:NOTE: Possibly update this, as when player dies there will be a shop screen, add something that pauses the game
+    // UPDATE
+    void ResetPlatforms() 
     {
         // Set the platforms back to the stored original positions.
-        for (int i = 0; i < platforms.Length; i++)
+        for (int i = 0; i < listOfPlatforms.Length; i++)
         {
             // Loop through the children and disable them.
             for (int j = 0; j < 4; j++)
             {
-                platforms[i].transform.GetChild(j).gameObject.SetActive(false);
+                listOfPlatforms[i].transform.GetChild(j).gameObject.SetActive(false);
             }
-            platforms[i].transform.position = platformsOrgPosition[i];
-            platforms[i].gameObject.SetActive(false);
+            listOfPlatforms[i].transform.position = platformsOrgPosition[i];
+            listOfPlatforms[i].gameObject.SetActive(false);
         }
         // Choosing platforms variables.
         isFirstPlatformActive = false;
         newPlatformStartPoint = 0;
+        // Reseting it so the first tile will be normal
+        platformType = 0;
         // Generating the platforms again.
         GeneratePlatforms();
     }
-    // A function to decide whether a tile will spawn as normal or encampment
-    int GenerateTileType()
+    // A function to reset the children of an object
+    void ResetChildren(GameObject go)
     {
-        if (normalTileCount <= 4)
+        // Loop through the children and disable them.
+        for (int i = 0; i < 4; i++)
         {
-            platformType = 0;
-            normalTileCount++;
+            go.transform.GetChild(i).gameObject.SetActive(false);
         }
-        else if (normalTileCount > 4)
-        {
-            platformType = Mathf.RoundToInt(UnityEngine.Random.Range(1,4));
-            normalChance += 10;
-        }
-        return platformType;
     }
     // A function to decide if the next platform will be encampment or normal
+    // TODO: LOTS OF REPEATED CODE IN THIS FUNCTION!!!
     int ChooseNextTileType(int currentType)
     {
+        // Chance this based on a difficultly level of some kind.
+        if (encampmentTileCount >= 3)
+        {
+            platformType = 0;
+            encampmentTileCount = 0;
+            normalChance += 5;
+            encampmentChance -= 2;
+            return platformType;
+        }
         // If the last platform was not normal then >
         if (currentType != 0)
         {
             // > Geneate random number and test if the normal chance is high enough to set it to normal.
             if (Mathf.RoundToInt(UnityEngine.Random.Range(0, 100)) < normalChance)
             {
-                // If you hit the normal chance range then decrease normal chance and increase encampment chance.
+                // If the number was below the normalChance number set type to normal.
                 platformType = 0;
+                // Change the chances depending on what you hit.
                 normalChance -= 5;
-                encampmentChance += 5;
+                encampmentChance += 2;
+                // Reset the encampment tile tracker.
+                encampmentTileCount = 0;
+                // Increase the normal tile tracker.
+                normalTileCount++;
             }
             else
             {
-                // TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 11111
+                // Generate one of the 3 encampment types.
                 platformType = Mathf.RoundToInt(UnityEngine.Random.Range(1,4));
-                encampmentChance -= 5;
+                encampmentChance -= 2;
+                normalChance += 5;
+                // Increase the encampment tile tracker.
+                encampmentTileCount++;
+                // Reset the normal tile tracker.
+                normalTileCount = 0;
             }
         }
         else if (currentType == 0)
         {
             if (Mathf.RoundToInt(UnityEngine.Random.Range(0,100)) < encampmentChance)
             {
+                // Generate one of the 3 encampment types.
                 platformType = Mathf.RoundToInt(UnityEngine.Random.Range(1,4));
-                encampmentChance -= 5;
-                normalChance += 5; 
+                encampmentChance -= 2;
+                normalChance += 5;
+                // Increase the encampment tile tracker.
+                encampmentTileCount++;
+                // Reset the normal tile tracker.
+                normalTileCount = 0;
             }
             else
             {
+                // If the number was below the normalChance number set type to normal.
                 platformType = 0;
-                encampmentChance += 5;
+                // Change the chances depending on what you hit.
+                encampmentChance += 2;
                 normalChance -= 5;
+                // Reset the encampment tile tracker.
+                encampmentTileCount = 0;
+                // Increase the normal tile tracker.
+                normalTileCount++;
             }
         }
+        //Debug.Log("Normal Chance: " + normalChance + "Encampment Chance: " + encampmentChance);
         return platformType;
     }
-    // !!------ PUBLIC FUNCTIONS ------!!
-    // Move the 3 platforms behind the player to the front
-    public IEnumerator MoveLastRow(Vector3 playerPosition)
+    void Movement()
     {
-        GameObject[] lastRow = new GameObject[3];
-        for (int i = 2; i < platforms.Length; i+=3)
+        // Jump right and forward
+        if (Input.GetKeyDown(KeyCode.D) && !isLerping)
         {
-            // Finding the platforms behind the player.
-            if (platforms[i].gameObject.transform.position.z+1 < playerPosition.z) {
-                // Reset the platform position to be 20 units infront of the player.
-                int placer = 0;
-                for (int j = i-2; j <= i; j++) {
-                    platforms[j].gameObject.transform.position = new Vector3(platforms[j].gameObject.transform.position.x, 
-                                                                             platforms[j].gameObject.transform.position.y, 
-                                                                             platforms[j].gameObject.transform.position.z + 24);
-                    setLastRowActive(platforms[j], false);
-                    lastRow[placer] = platforms[j];
-                    placer++;
-                } 
+            isLerping = true;
+            newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z - 4);
+            StartCoroutine(LerpTowards(newPosition, 1));
+        }
+        // Jump left and forward
+        else if (Input.GetKeyDown(KeyCode.A))
+        {
+            isLerping = true;
+            newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z - 4);
+            StartCoroutine(LerpTowards(newPosition, 2));
+        }
+        // Jump forward
+        else if (Input.GetKeyDown(KeyCode.W))
+        {
+            isLerping = true;
+            newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z - 4);
+            StartCoroutine(LerpTowards(newPosition, 0));
+        }
+    }
+    // !!------ PUBLIC FUNCTIONS ------!!
+    // A function to move the plaforms based on input from MovementScript
+    // COROUTINES
+    public IEnumerator LerpTowards(Vector3 towardsPosition, int direction)
+    {
+        // Directions: 0 == FORWARD, 1 == RIGHT FORWARD, 2 == LEFT FORWARD
+        while (isLerping)
+        {
+            lerpTime += Time.deltaTime * rateOfLerp;
+            transform.position = Vector3.Lerp(transform.position, towardsPosition, lerpTime);
+            if ((transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 0) ||
+                (transform.position.x <= towardsPosition.x + disBeforeComplete && transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 2) ||
+                (transform.position.x >= towardsPosition.x - disBeforeComplete && transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 1))
+            {
+                // If the player is close enough to the final destination set the position.
+                // NOTE: Fire a raycast to check if the player position is over a platform or not.
+                transform.position = towardsPosition;
+                ms.CheckPlatformLanded();
+                lerpTime = 0;
+                isLerping = false;
+                // Called after the position is set to speed up movement.
+                MoveLastRow();
+            }
+            yield return new WaitForSeconds(0);
+        }
+    }
+    // Move the 3 platforms behind the player to the front
+    public void MoveLastRow()
+    {
+        GameObject lastPlatform = null;
+        Vector3 playerPosition = new Vector3(0,1,0);
+        int position = 0;
+        for (int i = 0; i < 6; i++)
+        {
+            if (listOfPlatforms[i].gameObject.transform.position.z + 1 < playerPosition.z)
+            {
+                listOfPlatforms[i].gameObject.SetActive(false);
+                listOfPlatforms[i].gameObject.transform.position = new Vector3(listOfPlatforms[i].gameObject.transform.position.x,
+                                                                             listOfPlatforms[i].gameObject.transform.position.y,
+                                                                             listOfPlatforms[i].gameObject.transform.position.z + 24);
+                lastPlatform = listOfPlatforms[i].gameObject;
+                ResetChildren(lastPlatform);
+                position = i;
+                break;
             }
         }
-        // If the last row as been populated.
-        if (lastRow[0] != null)
+        if (lastPlatform != null)
         {
-            GeneratePlatformLoop(lastRow, newPlatformStartPoint);
+            GeneratePlatformLoop(lastPlatform, newPlatformStartPoint, position);
         }
-        yield return new WaitForSeconds(0);
     }
     // SUBSCRIPTIONS
     // Subscribe to reset event
