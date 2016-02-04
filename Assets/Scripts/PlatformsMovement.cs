@@ -19,6 +19,7 @@ public class PlatformsMovement : MonoBehaviour {
     private int platformType;
     private int encampmentChance;
     private int normalChance;
+    // TODO: USE THIS VARIABLE TO STOP TOO MANY ENCAMPMENTS SPAWNING IN A ROW.
     private int maxEncampmentCount;
 
     // Lerping variables
@@ -29,6 +30,12 @@ public class PlatformsMovement : MonoBehaviour {
     private Vector3 newPosition;
     private Vector3 orgPosition;
     private Vector3 leftPosition, centerPosition, rightPosition;
+    private Vector3[] newPlatformPositions;
+
+    // Events and delegates
+    public event ForwardHandler Forward;
+    public delegate void ForwardHandler();
+
     // Use this for initialization
     void Start () {
         // Linking the scripts
@@ -54,13 +61,14 @@ public class PlatformsMovement : MonoBehaviour {
         // Lerp variable initialization
         lerpTime = 0;
         rateOfLerp = 1f;
-        disBeforeComplete = 0.1f;
+        disBeforeComplete = 0.25f;
         isLerping = false;
         newPosition = new Vector3(0,0,0);
         orgPosition = listOfPlatforms[0].transform.position;
         leftPosition = new Vector3(listOfPlatforms[0].transform.position.x + 4, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
         centerPosition = new Vector3(listOfPlatforms[0].transform.position.x, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
         rightPosition = new Vector3(listOfPlatforms[0].transform.position.x - 4, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
+        newPlatformPositions = new Vector3[6];
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -70,7 +78,6 @@ public class PlatformsMovement : MonoBehaviour {
     }
     void Update()
     {
-        Movement();
     }
     // USER DEFINED FUNCTIONS
     void PopulatePlatforms()
@@ -96,7 +103,6 @@ public class PlatformsMovement : MonoBehaviour {
     // Generate the platform locations
     void GeneratePlatforms(int newPlatformNumber, int type)
     {
-        // REPLACE RECURSION WITH FOR LOOP
         for (int  i = 0; i < listOfPlatforms.Length; i++)
         {
             // 0 == right, 1 == center, 2 == left.
@@ -162,7 +168,7 @@ public class PlatformsMovement : MonoBehaviour {
         newPlatformStartPoint = nextRowPlatform;
     }
     // Function that reset the positions of object and score and basically starts the level again
-    // NOTE:NOTE:NOTE: Possibly update this, as when player dies there will be a shop screen, add something that pauses the game
+    // TODO:NOTE:NOTE: Possibly update this, as when player dies there will be a shop screen, add something that pauses the game
     // UPDATE
     void ResetPlatforms() 
     {
@@ -261,55 +267,54 @@ public class PlatformsMovement : MonoBehaviour {
                 normalTileCount++;
             }
         }
-        //Debug.Log("Normal Chance: " + normalChance + "Encampment Chance: " + encampmentChance);
         return platformType;
     }
-    void Movement()
+    // Delegate to be called when the player presses forward.
+    void MovePlatformsForward()
     {
-        // Jump right and forward
-        if (Input.GetKeyDown(KeyCode.D) && !isLerping)
-        {
+        if (!isLerping) {
+            // Populate array with new Z positions for platforms.
+            for (int i = 0; i < listOfPlatforms.Length; i++)
+            {
+                newPlatformPositions[i] = listOfPlatforms[i].transform.position;
+                newPlatformPositions[i] = new Vector3(newPlatformPositions[i].x, newPlatformPositions[i].y, newPlatformPositions[i].z - 4);
+            }
             isLerping = true;
-            newPosition = new Vector3(transform.position.x - 4, transform.position.y, transform.position.z - 4);
-            StartCoroutine(LerpTowards(newPosition, 1));
-        }
-        // Jump left and forward
-        else if (Input.GetKeyDown(KeyCode.A))
-        {
-            isLerping = true;
-            newPosition = new Vector3(transform.position.x + 4, transform.position.y, transform.position.z - 4);
-            StartCoroutine(LerpTowards(newPosition, 2));
-        }
-        // Jump forward
-        else if (Input.GetKeyDown(KeyCode.W))
-        {
-            isLerping = true;
-            newPosition = new Vector3(transform.position.x, transform.position.y, transform.position.z - 4);
-            StartCoroutine(LerpTowards(newPosition, 0));
+            // Start the coroutine to lerp the platforms forward.
+            StartCoroutine(LerpBackwards(newPlatformPositions));
         }
     }
     // !!------ PUBLIC FUNCTIONS ------!!
     // A function to move the plaforms based on input from MovementScript
     // COROUTINES
-    public IEnumerator LerpTowards(Vector3 towardsPosition, int direction)
+    public IEnumerator LerpBackwards(Vector3[] goPositions)
     {
         // Directions: 0 == FORWARD, 1 == RIGHT FORWARD, 2 == LEFT FORWARD
         while (isLerping)
         {
             lerpTime += Time.deltaTime * rateOfLerp;
-            transform.position = Vector3.Lerp(transform.position, towardsPosition, lerpTime);
-            if ((transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 0) ||
-                (transform.position.x <= towardsPosition.x + disBeforeComplete && transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 2) ||
-                (transform.position.x >= towardsPosition.x - disBeforeComplete && transform.position.z <= towardsPosition.z + disBeforeComplete && direction == 1))
+            for (int i = 0; i < listOfPlatforms.Length; i++)
             {
+                listOfPlatforms[i].transform.position = Vector3.Lerp(listOfPlatforms[i].transform.position, goPositions[i], lerpTime);
+            }
+            if (listOfPlatforms[5].transform.position.z <= goPositions[5].z + disBeforeComplete)
+            {
+                if (Forward != null)
+                {
+                    Forward();
+                }
                 // If the player is close enough to the final destination set the position.
                 // NOTE: Fire a raycast to check if the player position is over a platform or not.
-                transform.position = towardsPosition;
+                for (int i = 0; i < listOfPlatforms.Length; i++)
+               {
+                    listOfPlatforms[i].transform.position = goPositions[i];
+                }
                 ms.CheckPlatformLanded();
                 lerpTime = 0;
                 isLerping = false;
                 // Called after the position is set to speed up movement.
                 MoveLastRow();
+                StopAllCoroutines();
             }
             yield return new WaitForSeconds(0);
         }
@@ -317,16 +322,14 @@ public class PlatformsMovement : MonoBehaviour {
     // Move the 3 platforms behind the player to the front
     public void MoveLastRow()
     {
-        Debug.Log("Calling the function");
         GameObject lastPlatform = null;
         Vector3 playerPosition = new Vector3(0,1,0);
         int position = 0;
         for (int i = 0; i < listOfPlatforms.Length; i++)
         {
-            /*// UPDATE MOVEMENT SO THAT THE PLATFORMS ALL MOVE INSTEAD OF THE PARENT OBJECT
-            if (listOfPlatforms[i].gameObject.transform.localPosition.z >= playerPosition.z)
+            // UPDATE MOVEMENT SO THAT THE PLATFORMS ALL MOVE INSTEAD OF THE PARENT OBJECT
+            if (listOfPlatforms[i].gameObject.transform.localPosition.z < playerPosition.z)
             {
-                Debug.Log("Entered the loop");
                 listOfPlatforms[i].gameObject.SetActive(false);
                 listOfPlatforms[i].gameObject.transform.position = new Vector3(listOfPlatforms[i].gameObject.transform.position.x,
                                                                              listOfPlatforms[i].gameObject.transform.position.y,
@@ -335,7 +338,7 @@ public class PlatformsMovement : MonoBehaviour {
                 ResetChildren(lastPlatform);
                 position = i;
                 break;
-            }*/
+            }
         }
         if (lastPlatform != null)
         {
@@ -347,10 +350,6 @@ public class PlatformsMovement : MonoBehaviour {
     public void Subscribe(MovementScript ms)
     {
         ms.Reset += new MovementScript.ResetHandler(ResetPlatforms);
-    }
-    // Unsubscribe (unsubscribe if listener outlives event caller to break link for garbage collection)
-    public void Unsubscribe(MovementScript ms)
-    {
-        ms.Reset -= new MovementScript.ResetHandler(ResetPlatforms);
+        ms.Move += new MovementScript.MovePlatform(MovePlatformsForward);
     }
 }

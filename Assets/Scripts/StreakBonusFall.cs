@@ -72,9 +72,4 @@ public class StreakBonusFall : MonoBehaviour {
     {
         ss.Streak += new ScoreScript.StreakHandler(SetDropStreakAmount);
     }
-    // Unsubscribe (unsubscribe if listener outlives event caller to break link for garbage collection)
-    public void Unsubscribe(ScoreScript ss)
-    {
-        ss.Streak -= new ScoreScript.StreakHandler(SetDropStreakAmount);
-    }
 }

@@ -75,10 +75,4 @@ public class ScoreScript : MonoBehaviour {
         ms.Score += new MovementScript.ScoreHandler(UpdateScore);
         ms.Reset += new MovementScript.ResetHandler(ResetScore);
     }
-    // Unsubscribe (unsubscribe if listener outlives event caller to break link for garbage collection)
-    public void Unsubscribe(MovementScript ms)
-    {
-        ms.Score -= new MovementScript.ScoreHandler(UpdateScore);
-        ms.Reset -= new MovementScript.ResetHandler(ResetScore);
-    }
 }
