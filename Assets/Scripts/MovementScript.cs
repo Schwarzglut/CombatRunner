@@ -9,6 +9,12 @@ public class MovementScript : MonoBehaviour {
     // Increase score events
     public event ScoreHandler Score;
     public delegate void ScoreHandler();
+    // Increase score by amount events
+    public event ScoreIncreaseHandler ScoreIncrease;
+    public delegate void ScoreIncreaseHandler(int amount);
+    // Increase/Decrease health by amount events
+    public event HealthHandler Health;
+    public delegate void HealthHandler(int amount);
     // Move platforms event
     public event MovePlatform Move;
     public delegate void MovePlatform();
@@ -18,8 +24,15 @@ public class MovementScript : MonoBehaviour {
     private float disBeforeComplete;
     private bool isLerping;
     private bool isLerpingForward;
-
+    // Other script variables
     private PlatformsMovement pm;
+    // Stance variables
+    private int stanceCounter;
+    private bool isChangingStance;
+    private float rateOfStanceChange;
+    private float stanceChangeTime;
+    private string[] stance;
+    private string currentStance;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -29,6 +42,15 @@ public class MovementScript : MonoBehaviour {
         isLerpingForward = false;
         // grabbing script 
         pm = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
+        // stance variables initialization
+        stanceCounter = 0;
+        isChangingStance = false;
+        rateOfStanceChange = 0.1f;
+        stanceChangeTime = 0;
+        // Possible update this to have a default normal non-special type attack
+        stance = new string[4];
+        stance[0] = "fire"; stance[1] = "water"; stance[2] = "wind"; stance[3] = "earth";
+        currentStance = "fire";
         // Subscribe to event calls
         Subscribe();
     }
@@ -60,44 +82,21 @@ public class MovementScript : MonoBehaviour {
         else if (Input.GetKeyDown(KeyCode.W) && !isLerpingForward)
         {
             isLerpingForward = true;
-            if (Move != null)   4rt5gf1
+            if (Move != null)
             {
                 Move();
             }
         }
+        else if (Input.GetKeyDown(KeyCode.Space) && !isChangingStance)
+        {
+            ChangeStance();
+        }
     }
-    // COROUTINES
-    public IEnumerator LerpSideways(Vector3 direction, int num)
+    // A function to change stance of the player
+    void ChangeStance()
     {
-        // DIRECTIONS: 0 = left, 1 = right
-        while (isLerping)
-        {
-            lerpTime += Time.deltaTime * rateOfLerp;
-            transform.position = Vector3.Lerp(transform.position, direction, lerpTime);
-            if ((transform.position.x < direction.x + disBeforeComplete && num == 0) ||
-                (transform.position.x > direction.x - disBeforeComplete && num == 1))
-            {
-                transform.position = direction;
-                isLerping = false;
-                lerpTime = 0;
-                StopAllCoroutines();
-                CheckPlatformLanded();
-            yield return new WaitForSeconds(0);
-        }
-    } 
-    // Fire raycast to check if player has jumped onto a platform
-    public void CheckPlatformLanded()
-    {
-        RaycastHit hit = new RaycastHit();
-        if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
-        {
-            // If the event has a listener fire the event.
-            if (Reset != null) {
-                Reset();
-            }
-            // Reset the position of the player.
-            transform.position = new Vector3(0,1,0);
-        }
+        isChangingStance = true;
+        StartCoroutine(ChangeStanceCoroutine(stanceCounter));
     }
     // Collision detection functions
     void OnTriggerEnter(Collider col)
@@ -118,6 +117,111 @@ public class MovementScript : MonoBehaviour {
     void SetForwardBool()
     {
         isLerpingForward = false;
+    }
+    // A function to reduce health and reward gold
+    void AttackLanding(bool correctStance)
+    {
+        if (correctStance)
+        {
+            if (ScoreIncrease != null && Health != null) {
+                ScoreIncrease(10);
+                Health(5);
+            }
+        }
+        else if (!correctStance)
+        {
+            if (ScoreIncrease != null && Health != null)
+            {
+                ScoreIncrease(5);
+                Health(10);
+            }
+        }
+    }
+    // !!------ PUBLIC FUNCTIONS ------!!
+    // COROUTINES
+    public IEnumerator LerpSideways(Vector3 direction, int num)
+    {
+        // DIRECTIONS: 0 = left, 1 = right
+        while (isLerping)
+        {
+            lerpTime += Time.deltaTime * rateOfLerp;
+            transform.position = Vector3.Lerp(transform.position, direction, lerpTime);
+            if ((transform.position.x < direction.x + disBeforeComplete && num == 0) ||
+                (transform.position.x > direction.x - disBeforeComplete && num == 1))
+            {
+                transform.position = direction;
+                isLerping = false;
+                lerpTime = 0;
+                StopAllCoroutines();
+                CheckPlatformLanded();
+            }
+            yield return new WaitForSeconds(0);
+        }
+    }
+    // A coroutine to change the stance over a set amount of time
+    public IEnumerator ChangeStanceCoroutine(int stanceNumber)
+    {
+        while (stanceChangeTime < 2)
+        {
+            stanceChangeTime += Time.deltaTime * rateOfStanceChange;
+            if (stanceChangeTime >= 1)
+            {
+                // If the stance is at 4 then loop around.
+                if (stanceNumber >= 3)
+                {
+                    stanceCounter = 0;
+                    currentStance = stance[stanceCounter];
+                }
+                else
+                {
+                    stanceCounter++;
+                    currentStance = stance[stanceCounter];
+                }
+                isChangingStance = false;
+                stanceChangeTime = 0;
+                break;
+            }
+        }
+        yield return new WaitForFixedUpdate();
+    }
+    // Fire raycast to check if player has jumped onto a platform
+    public void CheckPlatformLanded()
+    {
+        RaycastHit hit = new RaycastHit();
+        if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
+        {
+            string type = "";
+            // Function to destroy encampment and reduce player health also reward player with gold.
+            for (int i = 0; i < 4; i++)
+            {
+                if (hit.transform.GetChild(i).gameObject.activeSelf)
+                {
+                    type = hit.transform.GetChild(i).gameObject.tag;
+                }
+            }
+            if (type == "fire")
+            {
+                return;
+            }
+            else if (currentStance == type && (currentStance != "fire"))
+            {
+                AttackLanding(true);
+            }
+            else if(currentStance != type && currentStance != "fire")
+            {
+                AttackLanding(false);
+            }
+        }
+        else if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
+        {
+            // If the event has a listener fire the event.
+            if (Reset != null)
+            {
+                Reset();
+            }
+            // Reset the position of the player.
+            transform.position = new Vector3(0, 1, 0);
+        }
     }
     // Subscribe to event function
     public void Subscribe()

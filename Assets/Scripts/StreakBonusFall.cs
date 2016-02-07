@@ -19,9 +19,6 @@ public class StreakBonusFall : MonoBehaviour {
         // Subscribing
         Subscribe(ss);
 	}
-	// Update is called once per frame
-	void Update () {
-	}
     void ResetStreakFall()
     {
         // Set the gameobject invisible.

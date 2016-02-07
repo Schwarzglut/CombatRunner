@@ -5,7 +5,7 @@ public class ScoreScript : MonoBehaviour {
     // Score and streak variables
     private GameObject scoreValue, streakValue;
     private MovementScript ms;
-    private int streakTracker, streakTrackerMax, streakAmount, score;
+    private int score;
     // Lerp variables
     private float lerpTime, rateOfLerp;
     private Vector3 streakFallPosition, startPosition, streakStartPosition;
@@ -19,9 +19,6 @@ public class ScoreScript : MonoBehaviour {
         streakValue = GameObject.FindGameObjectWithTag("streak");
         // Score variable initialization
         score = 0;
-        streakTracker = 0;
-        streakTrackerMax = 5;
-        streakAmount = 10;
         // Lerp variable initialization
         lerpTime = 0;
         rateOfLerp = 1;
@@ -37,23 +34,16 @@ public class ScoreScript : MonoBehaviour {
         // Increment score and streak tracker, if you get 5(temp) right in a row thats worth a streak bonus,
         // which is worth 10
         score++;
-        streakTracker++;
-        if (streakTracker >= 5)
-        {
-            streakTracker = 0;
-            // If the event has a listener fire the event.
-            if (Streak != null)
-            {
-                Streak();
-            }
-            score += streakAmount;
-        }
         scoreValue.GetComponent<TextMesh>().text = score.ToString();
     }
     // Overriden function for an input parameter of the int
     void UpdateScore(int incrementAmount)
     {
         score = incrementAmount;
+        if (Streak != null)
+        {
+            Streak();
+        }
         scoreValue.GetComponent<TextMesh>().text = score.ToString();
     }
     void ResetScore()
@@ -64,15 +54,16 @@ public class ScoreScript : MonoBehaviour {
             PlayerPrefs.SetFloat("highscore", score);
         }
         // Reset the score variables.
-        streakTracker = 0;
         score = 0;
         scoreValue.GetComponent<TextMesh>().text = score.ToString();
     }
+    // !!------ PUBLIC FUNCTIONS ------!!
     // SUBSCRIPTIONS
     // Subscribe to score and reset event
     public void Subscribe(MovementScript ms)
     {
         ms.Score += new MovementScript.ScoreHandler(UpdateScore);
+        ms.ScoreIncrease += new MovementScript.ScoreIncreaseHandler(UpdateScore);
         ms.Reset += new MovementScript.ResetHandler(ResetScore);
     }
 }

@@ -21,6 +21,7 @@ public class PlatformsMovement : MonoBehaviour {
     private int normalChance;
     // TODO: USE THIS VARIABLE TO STOP TOO MANY ENCAMPMENTS SPAWNING IN A ROW.
     private int maxEncampmentCount;
+    private int coinChance;
 
     // Lerping variables
     private float lerpTime;
@@ -56,6 +57,7 @@ public class PlatformsMovement : MonoBehaviour {
         platformType = 0;
         encampmentChance = 0;
         normalChance = 90;
+        coinChance = 80;
         // Chance this variable for difficulty
         maxEncampmentCount = 3;
         // Lerp variable initialization
@@ -95,7 +97,9 @@ public class PlatformsMovement : MonoBehaviour {
         // INDEPENDENT
         if (!isFirstPlatformActive)
         {
-            listOfPlatforms[1].gameObject.SetActive(true);
+            listOfPlatforms[0].gameObject.SetActive(true);
+            listOfPlatforms[0].transform.GetChild(4).gameObject.SetActive(false);
+            listOfPlatforms[0].transform.GetChild(0).gameObject.SetActive(true);
             GeneratePlatforms(1, 0);
             isFirstPlatformActive = true;
         }
@@ -103,7 +107,7 @@ public class PlatformsMovement : MonoBehaviour {
     // Generate the platform locations
     void GeneratePlatforms(int newPlatformNumber, int type)
     {
-        for (int  i = 0; i < listOfPlatforms.Length; i++)
+        for (int  i = 1; i < listOfPlatforms.Length; i++)
         {
             // 0 == right, 1 == center, 2 == left.
             Vector3 newPlatformPosition = new Vector3(0,0,0);
@@ -164,8 +168,20 @@ public class PlatformsMovement : MonoBehaviour {
         go.transform.localPosition = newPlatformPosition;
         // Set the choosen next platform to the generated platform type.
         go.transform.GetChild(ChooseNextTileType(platformType)).gameObject.SetActive(true);
+        GenerateCoin(go, platformType);
         // Set the new starting point for next row generation.
         newPlatformStartPoint = nextRowPlatform;
+    }
+    // Decide whether to spawn a coin or not.
+    void GenerateCoin(GameObject go, int platformType)
+    {
+        if (platformType == 0)
+        {
+            if (Mathf.RoundToInt(UnityEngine.Random.Range(0,100)) < coinChance)
+            {
+                go.transform.GetChild(4).gameObject.SetActive(true);
+            }
+        }
     }
     // Function that reset the positions of object and score and basically starts the level again
     // TODO:NOTE:NOTE: Possibly update this, as when player dies there will be a shop screen, add something that pauses the game
@@ -205,7 +221,7 @@ public class PlatformsMovement : MonoBehaviour {
     int ChooseNextTileType(int currentType)
     {
         // Chance this based on a difficultly level of some kind.
-        if (encampmentTileCount >= 3)
+        if (encampmentTileCount >= maxEncampmentCount)
         {
             platformType = 0;
             encampmentTileCount = 0;
@@ -269,7 +285,7 @@ public class PlatformsMovement : MonoBehaviour {
         }
         return platformType;
     }
-    // Delegate to be called when the player presses forward.
+    // Delegate to be called when the player presses forward
     void MovePlatformsForward()
     {
         if (!isLerping) {
