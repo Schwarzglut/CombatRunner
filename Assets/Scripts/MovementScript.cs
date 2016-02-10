@@ -26,6 +26,7 @@ public class MovementScript : MonoBehaviour {
     private bool isLerpingForward;
     // Other script variables
     private PlatformsMovement pm;
+    private HealthScript hs;
     // Stance variables
     private int stanceCounter;
     private bool isChangingStance;
@@ -33,6 +34,7 @@ public class MovementScript : MonoBehaviour {
     private float stanceChangeTime;
     private string[] stance;
     private string currentStance;
+    private Vector3[] stances;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -42,6 +44,7 @@ public class MovementScript : MonoBehaviour {
         isLerpingForward = false;
         // grabbing script 
         pm = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
+        hs = this.GetComponent<HealthScript>();
         // stance variables initialization
         stanceCounter = 0;
         isChangingStance = false;
@@ -51,6 +54,11 @@ public class MovementScript : MonoBehaviour {
         stance = new string[4];
         stance[0] = "fire"; stance[1] = "water"; stance[2] = "wind"; stance[3] = "earth";
         currentStance = "fire";
+        stances = new Vector3[4];
+        stances[0] = new Vector3(1,1,1);
+        stances[1] = new Vector3(0.25f, 3, 0.25f);
+        stances[2] = new Vector3(0.25f,0.5f,0.25f);
+        stances[3] = new Vector3(0.25f,1,1);
         // Subscribe to event calls
         Subscribe();
     }
@@ -137,6 +145,14 @@ public class MovementScript : MonoBehaviour {
             }
         }
     }
+    // A function to call the reset event
+    void ResetFunction()
+    {
+        if (Reset != null)
+        {
+            Reset();
+        }
+    }
     // !!------ PUBLIC FUNCTIONS ------!!
     // COROUTINES
     public IEnumerator LerpSideways(Vector3 direction, int num)
@@ -153,7 +169,6 @@ public class MovementScript : MonoBehaviour {
                 isLerping = false;
                 lerpTime = 0;
                 StopAllCoroutines();
-                CheckPlatformLanded();
             }
             yield return new WaitForSeconds(0);
         }
@@ -170,11 +185,13 @@ public class MovementScript : MonoBehaviour {
                 if (stanceNumber >= 3)
                 {
                     stanceCounter = 0;
+                    transform.GetChild(0).localScale = stances[stanceCounter];
                     currentStance = stance[stanceCounter];
                 }
                 else
                 {
                     stanceCounter++;
+                    transform.GetChild(0).localScale = stances[stanceCounter];
                     currentStance = stance[stanceCounter];
                 }
                 isChangingStance = false;
@@ -199,15 +216,15 @@ public class MovementScript : MonoBehaviour {
                     type = hit.transform.GetChild(i).gameObject.tag;
                 }
             }
+            // If the type you are on is the normal tile then don't register an attack.
             if (type == "fire")
             {
-                return;
             }
-            else if (currentStance == type && (currentStance != "fire"))
+            else if (currentStance == type)
             {
                 AttackLanding(true);
             }
-            else if(currentStance != type && currentStance != "fire")
+            else if(currentStance != type)
             {
                 AttackLanding(false);
             }
@@ -227,5 +244,6 @@ public class MovementScript : MonoBehaviour {
     public void Subscribe()
     {
         pm.Forward += new PlatformsMovement.ForwardHandler(SetForwardBool);
+        hs.HealthReset += new HealthScript.HealthResetHandler(ResetFunction);
     }
 }

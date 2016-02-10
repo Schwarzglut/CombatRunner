@@ -2,16 +2,22 @@
 using System.Collections;
 
 public class HealthScript : MonoBehaviour {
+    // Health gameobjects
+    GameObject healthTextMesh;
     // Health variables
     private int health;
     // Script Variables
     private MovementScript ms;
+    // Events and delegates
+    public event HealthResetHandler HealthReset;
+    public delegate void HealthResetHandler(); 
 	// Use this for initialization
 	void Start () {
         // health variable initialization
         health = 100;
         // script variable intitalization
         ms = this.gameObject.GetComponent<MovementScript>();
+        healthTextMesh = GameObject.FindGameObjectWithTag("health");
         // Subcribe to events
         Subscribe();
 	}
@@ -19,6 +25,14 @@ public class HealthScript : MonoBehaviour {
     void ChangeHealth(int amount)
     {
         health -= amount;
+        if (health <= 0)
+        {
+            if (HealthReset != null)
+            {
+                HealthReset();
+            }
+        }
+        healthTextMesh.GetComponent<TextMesh>().text = health.ToString();
         Debug.Log(health);
     }
     // A function to be called when an event reseting the level is called.
@@ -26,6 +40,7 @@ public class HealthScript : MonoBehaviour {
     {
         // Temp maxValue
         health = 100;
+        healthTextMesh.GetComponent<TextMesh>().text = health.ToString();
     }
     // SUBSCRIPTIONS
     // Subscribe to events function

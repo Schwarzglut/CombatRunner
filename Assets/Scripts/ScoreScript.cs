@@ -39,7 +39,7 @@ public class ScoreScript : MonoBehaviour {
     // Overriden function for an input parameter of the int
     void UpdateScore(int incrementAmount)
     {
-        score = incrementAmount;
+        score += incrementAmount;
         if (Streak != null)
         {
             Streak();
