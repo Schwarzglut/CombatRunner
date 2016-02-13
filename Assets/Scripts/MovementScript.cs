@@ -51,14 +51,6 @@ public class MovementScript : MonoBehaviour {
         rateOfStanceChange = 0.1f;
         stanceChangeTime = 0;
         // Possible update this to have a default normal non-special type attack
-        stance = new string[4];
-        stance[0] = "fire"; stance[1] = "water"; stance[2] = "wind"; stance[3] = "earth";
-        currentStance = "fire";
-        stances = new Vector3[4];
-        stances[0] = new Vector3(1,1,1);
-        stances[1] = new Vector3(0.25f, 3, 0.25f);
-        stances[2] = new Vector3(0.25f,0.5f,0.25f);
-        stances[3] = new Vector3(0.25f,1,1);
         // Subscribe to event calls
         Subscribe();
     }
@@ -95,20 +87,18 @@ public class MovementScript : MonoBehaviour {
                 Move();
             }
         }
-        else if (Input.GetKeyDown(KeyCode.Space) && !isChangingStance)
-        {
-            ChangeStance();
-        }
+    }
+    // A function to record the players stance changes while on a platform
+    void StaceSteps()
+    {
+        // Find a way to record player input or at least match it to an aray.
     }
     // A function to change stance of the player
-    void ChangeStance()
-    {
-        isChangingStance = true;
-        StartCoroutine(ChangeStanceCoroutine(stanceCounter));
-    }
     // Collision detection functions
+    // TODO: UPDATE
     void OnTriggerEnter(Collider col)
     {
+        Debug.Log("Entering collider");
         // If you've hit a coin
         if (col.gameObject.tag == "gold")
         {
@@ -127,24 +117,6 @@ public class MovementScript : MonoBehaviour {
         isLerpingForward = false;
     }
     // A function to reduce health and reward gold
-    void AttackLanding(bool correctStance)
-    {
-        if (correctStance)
-        {
-            if (ScoreIncrease != null && Health != null) {
-                ScoreIncrease(10);
-                Health(5);
-            }
-        }
-        else if (!correctStance)
-        {
-            if (ScoreIncrease != null && Health != null)
-            {
-                ScoreIncrease(5);
-                Health(10);
-            }
-        }
-    }
     // A function to call the reset event
     void ResetFunction()
     {
@@ -174,62 +146,11 @@ public class MovementScript : MonoBehaviour {
         }
     }
     // A coroutine to change the stance over a set amount of time
-    public IEnumerator ChangeStanceCoroutine(int stanceNumber)
-    {
-        while (stanceChangeTime < 2)
-        {
-            stanceChangeTime += Time.deltaTime * rateOfStanceChange;
-            if (stanceChangeTime >= 1)
-            {
-                // If the stance is at 4 then loop around.
-                if (stanceNumber >= 3)
-                {
-                    stanceCounter = 0;
-                    transform.GetChild(0).localScale = stances[stanceCounter];
-                    currentStance = stance[stanceCounter];
-                }
-                else
-                {
-                    stanceCounter++;
-                    transform.GetChild(0).localScale = stances[stanceCounter];
-                    currentStance = stance[stanceCounter];
-                }
-                isChangingStance = false;
-                stanceChangeTime = 0;
-                break;
-            }
-        }
-        yield return new WaitForFixedUpdate();
-    }
     // Fire raycast to check if player has jumped onto a platform
     public void CheckPlatformLanded()
     {
         RaycastHit hit = new RaycastHit();
-        if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
-        {
-            string type = "";
-            // Function to destroy encampment and reduce player health also reward player with gold.
-            for (int i = 0; i < 4; i++)
-            {
-                if (hit.transform.GetChild(i).gameObject.activeSelf)
-                {
-                    type = hit.transform.GetChild(i).gameObject.tag;
-                }
-            }
-            // If the type you are on is the normal tile then don't register an attack.
-            if (type == "fire")
-            {
-            }
-            else if (currentStance == type)
-            {
-                AttackLanding(true);
-            }
-            else if(currentStance != type)
-            {
-                AttackLanding(false);
-            }
-        }
-        else if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
+        if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
         {
             // If the event has a listener fire the event.
             if (Reset != null)

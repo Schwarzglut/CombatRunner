@@ -33,7 +33,6 @@ public class HealthScript : MonoBehaviour {
             }
         }
         healthTextMesh.GetComponent<TextMesh>().text = health.ToString();
-        Debug.Log(health);
     }
     // A function to be called when an event reseting the level is called.
     void ResetHealth()

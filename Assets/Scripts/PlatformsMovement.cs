@@ -99,13 +99,12 @@ public class PlatformsMovement : MonoBehaviour {
         {
             listOfPlatforms[0].gameObject.SetActive(true);
             listOfPlatforms[0].transform.GetChild(4).gameObject.SetActive(false);
-            listOfPlatforms[0].transform.GetChild(0).gameObject.SetActive(true);
-            GeneratePlatforms(1, 0);
+            GeneratePlatforms(1);
             isFirstPlatformActive = true;
         }
     }
     // Generate the platform locations
-    void GeneratePlatforms(int newPlatformNumber, int type)
+    void GeneratePlatforms(int newPlatformNumber)
     {
         for (int  i = 1; i < listOfPlatforms.Length; i++)
         {
@@ -129,15 +128,6 @@ public class PlatformsMovement : MonoBehaviour {
             // Set the choosen next platform to active.
             listOfPlatforms[i].gameObject.SetActive(true);
             listOfPlatforms[i].gameObject.transform.localPosition = newPlatformPosition;
-            // Set the choosen next platform to the generated platform type.
-            listOfPlatforms[i].transform.GetChild(type).gameObject.SetActive(true);
-            // If the platform is an encampment disable the coin.
-            if (type != 0)
-            {
-                listOfPlatforms[i].transform.GetChild(4).gameObject.SetActive(false);
-            }
-            // Set the next type.
-            type = ChooseNextTileType(type);
         }
         newPlatformStartPoint = newPlatformNumber;
     }
@@ -166,8 +156,6 @@ public class PlatformsMovement : MonoBehaviour {
         go.SetActive(true);
         // Give the gameobject its new position.
         go.transform.localPosition = newPlatformPosition;
-        // Set the choosen next platform to the generated platform type.
-        go.transform.GetChild(ChooseNextTileType(platformType)).gameObject.SetActive(true);
         GenerateCoin(go, platformType);
         // Set the new starting point for next row generation.
         newPlatformStartPoint = nextRowPlatform;
@@ -215,75 +203,6 @@ public class PlatformsMovement : MonoBehaviour {
         {
             go.transform.GetChild(i).gameObject.SetActive(false);
         }
-    }
-    // A function to decide if the next platform will be encampment or normal
-    // TODO: LOTS OF REPEATED CODE IN THIS FUNCTION!!!
-    int ChooseNextTileType(int currentType)
-    {
-        // Chance this based on a difficultly level of some kind.
-        if (encampmentTileCount >= maxEncampmentCount)
-        {
-            platformType = 0;
-            encampmentTileCount = 0;
-            normalChance += 5;
-            encampmentChance -= 2;
-            return platformType;
-        }
-        // If the last platform was not normal then >
-        if (currentType != 0)
-        {
-            // > Geneate random number and test if the normal chance is high enough to set it to normal.
-            if (Mathf.RoundToInt(UnityEngine.Random.Range(0, 100)) < normalChance)
-            {
-                // If the number was below the normalChance number set type to normal.
-                platformType = 0;
-                // Change the chances depending on what you hit.
-                normalChance -= 5;
-                encampmentChance += 2;
-                // Reset the encampment tile tracker.
-                encampmentTileCount = 0;
-                // Increase the normal tile tracker.
-                normalTileCount++;
-            }
-            else
-            {
-                // Generate one of the 3 encampment types.
-                platformType = Mathf.RoundToInt(UnityEngine.Random.Range(1,4));
-                encampmentChance -= 2;
-                normalChance += 5;
-                // Increase the encampment tile tracker.
-                encampmentTileCount++;
-                // Reset the normal tile tracker.
-                normalTileCount = 0;
-            }
-        }
-        else if (currentType == 0)
-        {
-            if (Mathf.RoundToInt(UnityEngine.Random.Range(0,100)) < encampmentChance)
-            {
-                // Generate one of the 3 encampment types.
-                platformType = Mathf.RoundToInt(UnityEngine.Random.Range(1,4));
-                encampmentChance -= 2;
-                normalChance += 5;
-                // Increase the encampment tile tracker.
-                encampmentTileCount++;
-                // Reset the normal tile tracker.
-                normalTileCount = 0;
-            }
-            else
-            {
-                // If the number was below the normalChance number set type to normal.
-                platformType = 0;
-                // Change the chances depending on what you hit.
-                encampmentChance += 2;
-                normalChance -= 5;
-                // Reset the encampment tile tracker.
-                encampmentTileCount = 0;
-                // Increase the normal tile tracker.
-                normalTileCount++;
-            }
-        }
-        return platformType;
     }
     // Delegate to be called when the player presses forward
     void MovePlatformsForward()

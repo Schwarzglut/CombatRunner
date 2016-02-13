@@ -11,7 +11,7 @@ public class StreakBonusFall : MonoBehaviour {
     void Start () {
         // Script initialization
         ss = GameObject.FindGameObjectWithTag("score").GetComponent<ScoreScript>();
-        // Lerping initialization
+        // Lerping initialization 
         lerpTime = 0;
         rateOfLerp = 1.5f;
         startPosition = transform.localPosition;
