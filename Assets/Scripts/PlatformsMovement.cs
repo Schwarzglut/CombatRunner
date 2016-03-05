@@ -22,6 +22,7 @@ public class PlatformsMovement : MonoBehaviour {
     // TODO: USE THIS VARIABLE TO STOP TOO MANY ENCAMPMENTS SPAWNING IN A ROW.
     private int maxEncampmentCount;
     private int coinChance;
+    private int typeToBe;
 
     // Lerping variables
     private float lerpTime;
@@ -36,7 +37,11 @@ public class PlatformsMovement : MonoBehaviour {
     // Events and delegates
     public event ForwardHandler Forward;
     public delegate void ForwardHandler();
+    public event StanceHandler StanceFinished;
+    public delegate void StanceHandler();
 
+    // Stance variables
+    private int encampmentTracker;
     // Use this for initialization
     void Start () {
         // Linking the scripts
@@ -55,14 +60,15 @@ public class PlatformsMovement : MonoBehaviour {
         normalTileCount = 0;
         encampmentTileCount = 0;
         platformType = 0;
-        encampmentChance = 0;
+        encampmentChance = 10;
         normalChance = 90;
         coinChance = 80;
+        typeToBe = 0;
         // Chance this variable for difficulty
         maxEncampmentCount = 3;
         // Lerp variable initialization
         lerpTime = 0;
-        rateOfLerp = 1f;
+        rateOfLerp = 1.5f;
         disBeforeComplete = 0.25f;
         isLerping = false;
         newPosition = new Vector3(0,0,0);
@@ -71,6 +77,8 @@ public class PlatformsMovement : MonoBehaviour {
         centerPosition = new Vector3(listOfPlatforms[0].transform.position.x, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
         rightPosition = new Vector3(listOfPlatforms[0].transform.position.x - 4, listOfPlatforms[0].transform.position.y, listOfPlatforms[0].transform.position.z);
         newPlatformPositions = new Vector3[6];
+        // Stance variables
+        encampmentTracker = 0;
         // GENERATE PLATFORMS
         // Call function to start making the path
         GeneratePlatforms();
@@ -98,7 +106,7 @@ public class PlatformsMovement : MonoBehaviour {
         if (!isFirstPlatformActive)
         {
             listOfPlatforms[0].gameObject.SetActive(true);
-            listOfPlatforms[0].transform.GetChild(4).gameObject.SetActive(false);
+            listOfPlatforms[0].transform.GetChild(2).gameObject.SetActive(false);
             GeneratePlatforms(1);
             isFirstPlatformActive = true;
         }
@@ -128,6 +136,19 @@ public class PlatformsMovement : MonoBehaviour {
             // Set the choosen next platform to active.
             listOfPlatforms[i].gameObject.SetActive(true);
             listOfPlatforms[i].gameObject.transform.localPosition = newPlatformPosition;
+            typeToBe = GenerateTileType(platformType);
+            // If the generated type is an encampment then trigger the function in the stance script attached to the child.
+            if (typeToBe == 1)
+            {
+                // Keep track of the number of encampments spawned in a row.
+                encampmentTracker++;
+                listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>();
+            }
+            else
+            {
+                encampmentTracker = 0;
+            }
+            listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).gameObject.SetActive(true);
         }
         newPlatformStartPoint = newPlatformNumber;
     }
@@ -156,9 +177,31 @@ public class PlatformsMovement : MonoBehaviour {
         go.SetActive(true);
         // Give the gameobject its new position.
         go.transform.localPosition = newPlatformPosition;
+        go.transform.GetChild(GenerateTileType(platformType)).gameObject.SetActive(true);
         GenerateCoin(go, platformType);
         // Set the new starting point for next row generation.
         newPlatformStartPoint = nextRowPlatform;
+    }
+    // A function to decide if the tile generated is encampement or default.
+    int GenerateTileType(int currentType)
+    {
+        // CURRENT TYPE 0 == DEFAULT, 1 == ENCAMPMENT
+        // Decide which chance is going to be tested.
+        int randomChance = Mathf.RoundToInt(UnityEngine.Random.Range(0, 100));
+        // Below typeChance spawns type 0 above typeChance spawns type 1
+        if (randomChance < encampmentChance && encampmentTileCount < 3)
+        {
+            platformType = 1;
+            encampmentChance -= 5;
+            encampmentTileCount++;
+        }
+        else
+        {
+            platformType = 0;
+            encampmentChance += 5;
+            encampmentTileCount = 0;
+        }
+        return platformType;
     }
     // Decide whether to spawn a coin or not.
     void GenerateCoin(GameObject go, int platformType)
@@ -167,7 +210,7 @@ public class PlatformsMovement : MonoBehaviour {
         {
             if (Mathf.RoundToInt(UnityEngine.Random.Range(0,100)) < coinChance)
             {
-                go.transform.GetChild(4).gameObject.SetActive(true);
+                go.transform.GetChild(2).gameObject.SetActive(true);
             }
         }
     }
@@ -180,7 +223,7 @@ public class PlatformsMovement : MonoBehaviour {
         for (int i = 0; i < listOfPlatforms.Length; i++)
         {
             // Loop through the children and disable them.
-            for (int j = 0; j < 4; j++)
+            for (int j = 0; j < 2; j++)
             {
                 listOfPlatforms[i].transform.GetChild(j).gameObject.SetActive(false);
             }
@@ -199,7 +242,7 @@ public class PlatformsMovement : MonoBehaviour {
     void ResetChildren(GameObject go)
     {
         // Loop through the children and disable them.
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 2; i++)
         {
             go.transform.GetChild(i).gameObject.SetActive(false);
         }

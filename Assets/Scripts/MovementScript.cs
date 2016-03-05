@@ -18,6 +18,9 @@ public class MovementScript : MonoBehaviour {
     // Move platforms event
     public event MovePlatform Move;
     public delegate void MovePlatform();
+    // Landed platforms event
+    public event LandHandler Land;
+    public delegate void LandHandler();
     // Lerping variables
     private float lerpTime;
     private float rateOfLerp;
@@ -28,17 +31,11 @@ public class MovementScript : MonoBehaviour {
     private PlatformsMovement pm;
     private HealthScript hs;
     // Stance variables
-    private int stanceCounter;
-    private bool isChangingStance;
-    private float rateOfStanceChange;
-    private float stanceChangeTime;
-    private string[] stance;
-    private string currentStance;
-    private Vector3[] stances;
+    private bool isAllowedToMove;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
-        rateOfLerp = 1f;
+        rateOfLerp = 1.5f;
         disBeforeComplete = 0.25f;
         isLerping = false;
         isLerpingForward = false;
@@ -46,17 +43,16 @@ public class MovementScript : MonoBehaviour {
         pm = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
         hs = this.GetComponent<HealthScript>();
         // stance variables initialization
-        stanceCounter = 0;
-        isChangingStance = false;
-        rateOfStanceChange = 0.1f;
-        stanceChangeTime = 0;
+        isAllowedToMove = true;
         // Possible update this to have a default normal non-special type attack
         // Subscribe to event calls
         Subscribe();
     }
     void Update()
     {
-        Movement();
+        if (isAllowedToMove) {
+            Movement();
+        }
     }
     // A function called every frame to check if the user has decided to move.
     void Movement()
@@ -125,6 +121,11 @@ public class MovementScript : MonoBehaviour {
             Reset();
         }
     }
+    // A function to allow the player to start moving again
+    void SetAllowPlayerMovement()
+    {
+        isAllowedToMove = true;
+    }
     // !!------ PUBLIC FUNCTIONS ------!!
     // COROUTINES
     public IEnumerator LerpSideways(Vector3 direction, int num)
@@ -145,11 +146,20 @@ public class MovementScript : MonoBehaviour {
             yield return new WaitForSeconds(0);
         }
     }
-    // A coroutine to change the stance over a set amount of time
     // Fire raycast to check if player has jumped onto a platform
     public void CheckPlatformLanded()
     {
         RaycastHit hit = new RaycastHit();
+        if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
+        {
+            if (hit.transform.GetChild(1).gameObject.activeSelf) {
+                if (Land != null)
+                {
+                    Land();
+                    isAllowedToMove = false;
+                }
+            }
+        }
         if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
         {
             // If the event has a listener fire the event.
@@ -165,6 +175,7 @@ public class MovementScript : MonoBehaviour {
     public void Subscribe()
     {
         pm.Forward += new PlatformsMovement.ForwardHandler(SetForwardBool);
+        pm.StanceFinished += new PlatformsMovement.StanceHandler(SetAllowPlayerMovement);
         hs.HealthReset += new HealthScript.HealthResetHandler(ResetFunction);
     }
 }
