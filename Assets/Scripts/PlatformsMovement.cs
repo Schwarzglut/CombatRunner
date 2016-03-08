@@ -140,7 +140,7 @@ public class PlatformsMovement : MonoBehaviour {
             {
                 listOfPlatforms[i].gameObject.tag = "encampment";
                 encampmentTracker++;
-                //listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>().GenerateStances(encampmentTracker);
+                listOfPlatforms[i].gameObject.GetComponent<StanceScript>().GenerateStances(encampmentTracker);
             }
             else
             {
@@ -181,7 +181,7 @@ public class PlatformsMovement : MonoBehaviour {
         {
             go.tag = "encampment";
             encampmentTracker++;
-            //listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>().GenerateStances(encampmentTracker);
+            go.GetComponent<StanceScript>().GenerateStances(encampmentTracker);
         }
         else
         {

@@ -47,9 +47,11 @@ public class StanceScript : MonoBehaviour {
             stances = new char[1];
             stances[0] = stanceButtons[Random.Range(0, 2)];
         }
+        string temp = "";
         for (int i = 0; i < stances.Length; i++) {
-            Debug.Log(stances[i]);
+            temp += stances[i];
         }
+        Debug.Log(temp);
     }
     // A function to grab the stances of the platform associated with this script
     public char[] GrabStances()

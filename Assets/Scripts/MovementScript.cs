@@ -170,6 +170,11 @@ public class MovementScript : MonoBehaviour {
             transform.position = new Vector3(0, 1, 0);
         }
     }
+    // A function for public use to allow movement to continue
+    public void AllowMovement()
+    {
+        isAllowedToMove = true;
+    }
     // Subscribe to event function
     public void Subscribe()
     {

@@ -8,6 +8,7 @@ public class HealthScript : MonoBehaviour {
     private int health;
     // Script Variables
     private MovementScript ms;
+    private AttackScript attScript;
     // Events and delegates
     public event HealthResetHandler HealthReset;
     public delegate void HealthResetHandler(); 
@@ -16,7 +17,8 @@ public class HealthScript : MonoBehaviour {
         // health variable initialization
         health = 100;
         // script variable intitalization
-        ms = this.gameObject.GetComponent<MovementScript>();
+        ms = this.GetComponent<MovementScript>();
+        attScript = this.GetComponent<AttackScript>();
         healthTextMesh = GameObject.FindGameObjectWithTag("health");
         // Subcribe to events
         Subscribe();
@@ -46,6 +48,7 @@ public class HealthScript : MonoBehaviour {
     void Subscribe()
     {
         ms.Health += new MovementScript.HealthHandler(ChangeHealth);
+        attScript.ReduceHealth += new AttackScript.HealthHandler(ChangeHealth);
         ms.Reset += new MovementScript.ResetHandler(ResetHealth);
     }
 }

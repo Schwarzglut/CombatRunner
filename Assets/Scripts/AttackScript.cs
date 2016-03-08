@@ -2,9 +2,16 @@
 using System.Collections;
 
 public class AttackScript : MonoBehaviour {
+    // Stance variables
     char[] stances = new char[0];
+    // Health reducing event
+    public event HealthHandler ReduceHealth;
+    public delegate void HealthHandler(int amount);
+    // Other variables
+    MovementScript ms;
     // Use this for initialization
 	void Start () {
+        ms = this.GetComponent<MovementScript>();
 	}
 	// Update is called once per frame
 	void Update () {
@@ -23,20 +30,31 @@ public class AttackScript : MonoBehaviour {
         int position = 0;
         while (!finished)
         {
-            if (Input.inputString[0] == stances[position])
+            if (Input.inputString != "")
             {
-                position++;
-                if (position == stances.Length)
+                if (Input.GetKey(KeyCode.Q) || Input.GetKey(KeyCode.E))
                 {
-                    finished = true;
+                    if (Input.inputString[0] == stances[position])
+                    {
+                        position++;
+                        if (position == stances.Length)
+                        {
+                            finished = true;
+                            ms.AllowMovement();
+                        }
+                    }
+                    else
+                    {
+                        position = 0;
+                        if (ReduceHealth != null)
+                        {
+                            ReduceHealth(20);
+                        }
+                        //TODO: Some event that reduces health? 
+                    }
                 }
             }
-            else
-            {
-                position = 0;
-                //TODO: Some event that reduces health? 
-            }
+            yield return new WaitForSeconds(0);
         }
-        yield return new WaitForSeconds(0);
     }
 }
