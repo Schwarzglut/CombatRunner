@@ -37,8 +37,6 @@ public class PlatformsMovement : MonoBehaviour {
     // Events and delegates
     public event ForwardHandler Forward;
     public delegate void ForwardHandler();
-    public event StanceHandler StanceFinished;
-    public delegate void StanceHandler();
 
     // Stance variables
     private int encampmentTracker;
@@ -140,12 +138,13 @@ public class PlatformsMovement : MonoBehaviour {
             // If the generated type is an encampment then trigger the function in the stance script attached to the child.
             if (typeToBe == 1)
             {
-                // Keep track of the number of encampments spawned in a row.
+                listOfPlatforms[i].gameObject.tag = "encampment";
                 encampmentTracker++;
-                listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>();
+                //listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>().GenerateStances(encampmentTracker);
             }
             else
             {
+                listOfPlatforms[i].gameObject.tag = "defaultCamp";
                 encampmentTracker = 0;
             }
             listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).gameObject.SetActive(true);
@@ -177,7 +176,19 @@ public class PlatformsMovement : MonoBehaviour {
         go.SetActive(true);
         // Give the gameobject its new position.
         go.transform.localPosition = newPlatformPosition;
-        go.transform.GetChild(GenerateTileType(platformType)).gameObject.SetActive(true);
+        typeToBe = GenerateTileType(platformType);
+        if (typeToBe == 1)
+        {
+            go.tag = "encampment";
+            encampmentTracker++;
+            //listOfPlatforms[i].gameObject.transform.GetChild(typeToBe).GetComponent<StanceScript>().GenerateStances(encampmentTracker);
+        }
+        else
+        {
+            go.tag = "defaultCamp";
+            encampmentTracker = 0;
+        }
+        go.transform.GetChild(typeToBe).gameObject.SetActive(true);
         GenerateCoin(go, platformType);
         // Set the new starting point for next row generation.
         newPlatformStartPoint = nextRowPlatform;

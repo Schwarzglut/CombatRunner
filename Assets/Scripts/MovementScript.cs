@@ -18,9 +18,6 @@ public class MovementScript : MonoBehaviour {
     // Move platforms event
     public event MovePlatform Move;
     public delegate void MovePlatform();
-    // Landed platforms event
-    public event LandHandler Land;
-    public delegate void LandHandler();
     // Lerping variables
     private float lerpTime;
     private float rateOfLerp;
@@ -30,6 +27,7 @@ public class MovementScript : MonoBehaviour {
     // Other script variables
     private PlatformsMovement pm;
     private HealthScript hs;
+    private AttackScript attScript;
     // Stance variables
     private bool isAllowedToMove;
     void Start() {
@@ -42,6 +40,7 @@ public class MovementScript : MonoBehaviour {
         // grabbing script 
         pm = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
         hs = this.GetComponent<HealthScript>();
+        attScript = this.GetComponent<AttackScript>();
         // stance variables initialization
         isAllowedToMove = true;
         // Possible update this to have a default normal non-special type attack
@@ -94,7 +93,6 @@ public class MovementScript : MonoBehaviour {
     // TODO: UPDATE
     void OnTriggerEnter(Collider col)
     {
-        Debug.Log("Entering collider");
         // If you've hit a coin
         if (col.gameObject.tag == "gold")
         {
@@ -149,15 +147,16 @@ public class MovementScript : MonoBehaviour {
     // Fire raycast to check if player has jumped onto a platform
     public void CheckPlatformLanded()
     {
+        // TODO: Add functionality to check if platform landed upon is an encampment
         RaycastHit hit = new RaycastHit();
         if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
         {
-            if (hit.transform.GetChild(1).gameObject.activeSelf) {
-                if (Land != null)
-                {
-                    Land();
-                    isAllowedToMove = false;
-                }
+            // If the player lands on an encampment, stop the player being able to move though isAllowedToMove 
+            // Then start the event that tracks input and 
+            if (hit.transform.tag == "encampment")
+            {
+                isAllowedToMove = false;
+                attScript.Attacking(hit.transform.gameObject.GetComponent<StanceScript>());
             }
         }
         if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
@@ -175,7 +174,6 @@ public class MovementScript : MonoBehaviour {
     public void Subscribe()
     {
         pm.Forward += new PlatformsMovement.ForwardHandler(SetForwardBool);
-        pm.StanceFinished += new PlatformsMovement.StanceHandler(SetAllowPlayerMovement);
         hs.HealthReset += new HealthScript.HealthResetHandler(ResetFunction);
     }
 }
