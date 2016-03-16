@@ -5,18 +5,13 @@ public class StanceScript : MonoBehaviour {
     // Stance variables
     char[] stanceButtons = new char[2] { 'q', 'e' };
     char[] stances = new char[0];
+    string stancesAsString;
     // Use this for initialization
     void Start () {
-	}
-	
+        stancesAsString = "";
+    }
 	// Update is called once per frame
 	void Update () {
-        // Input.inputstring to detect what the player has pressed and compare the char's with each char in the generated string of stances.
-        /*if (Input.inputString != "")
-        {
-            char temp = Input.inputString[0];
-            print(temp);
-        }*/
     }
     // !!------ PUBLIC FUNCTIONS ------!!
     // A function to generate the stances of an encampment
@@ -47,15 +42,17 @@ public class StanceScript : MonoBehaviour {
             stances = new char[1];
             stances[0] = stanceButtons[Random.Range(0, 2)];
         }
-        string temp = "";
         for (int i = 0; i < stances.Length; i++) {
-            temp += stances[i];
+            stancesAsString += stances[i];
         }
-        Debug.Log(temp);
     }
     // A function to grab the stances of the platform associated with this script
     public char[] GrabStances()
     {
         return stances;
+    }
+    public string GrabStancesAsString()
+    {
+        return stancesAsString;
     }
 }

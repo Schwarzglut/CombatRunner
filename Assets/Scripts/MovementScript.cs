@@ -18,6 +18,9 @@ public class MovementScript : MonoBehaviour {
     // Move platforms event
     public event MovePlatform Move;
     public delegate void MovePlatform();
+    // Stance text event
+    public event ShowStances ShowStance;
+    public delegate void ShowStances(string stance);
     // Lerping variables
     private float lerpTime;
     private float rateOfLerp;
@@ -30,6 +33,7 @@ public class MovementScript : MonoBehaviour {
     private AttackScript attScript;
     // Stance variables
     private bool isAllowedToMove;
+    private string stances;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -43,6 +47,7 @@ public class MovementScript : MonoBehaviour {
         attScript = this.GetComponent<AttackScript>();
         // stance variables initialization
         isAllowedToMove = true;
+        stances = "";
         // Possible update this to have a default normal non-special type attack
         // Subscribe to event calls
         Subscribe();
@@ -156,6 +161,11 @@ public class MovementScript : MonoBehaviour {
             if (hit.transform.tag == "encampment")
             {
                 isAllowedToMove = false;
+                stances = hit.transform.gameObject.GetComponent<StanceScript>().GrabStancesAsString();
+                if (ShowStance != null)
+                {
+                    ShowStance(stances);
+                }
                 attScript.Attacking(hit.transform.gameObject.GetComponent<StanceScript>());
             }
         }
