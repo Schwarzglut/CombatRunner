@@ -34,6 +34,11 @@ public class MovementScript : MonoBehaviour {
     // Stance variables
     private bool isAllowedToMove;
     private string stances;
+    // Platform prediction
+    private GameObject[] platforms;
+    private int distanceToNextPlatform;
+    private GameObject closestPlatform;
+    private int nextPlatformDirection;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -48,6 +53,10 @@ public class MovementScript : MonoBehaviour {
         // stance variables initialization
         isAllowedToMove = true;
         stances = "";
+        platforms = new GameObject[6];
+        // Value set to 100 so that accurate closest distance can be found
+        distanceToNextPlatform = 100;
+        nextPlatformDirection = -1;
         // Possible update this to have a default normal non-special type attack
         // Subscribe to event calls
         Subscribe();
@@ -88,11 +97,6 @@ public class MovementScript : MonoBehaviour {
             }
         }
     }
-    // A function to record the players stance changes while on a platform
-    void StaceSteps()
-    {
-        // Find a way to record player input or at least match it to an aray.
-    }
     // A function to change stance of the player
     // Collision detection functions
     // TODO: UPDATE
@@ -124,10 +128,30 @@ public class MovementScript : MonoBehaviour {
             Reset();
         }
     }
-    // A function to allow the player to start moving again
-    void SetAllowPlayerMovement()
+    // A function to move the player automatically
+    void MovePlayerAfterAttack()
     {
-        isAllowedToMove = true;
+        if (closestPlatform.transform.position.x > this.gameObject.transform.position.x)
+        {
+            nextPlatformDirection = 1;
+        }
+        else if (closestPlatform.transform.position.x < this.gameObject.transform.position.x)
+        {
+            nextPlatformDirection = 0;
+        }
+        else
+        {
+            nextPlatformDirection = -1;
+        }
+        if (nextPlatformDirection >= 0)
+        {
+            isLerping = true;
+            StartCoroutine(LerpSideways(new Vector3(closestPlatform.transform.position.x, 1, 0), nextPlatformDirection));
+        }
+        if (Move != null)
+        {
+            Move();
+        }
     }
     // !!------ PUBLIC FUNCTIONS ------!!
     // COROUTINES
@@ -149,15 +173,23 @@ public class MovementScript : MonoBehaviour {
             yield return new WaitForSeconds(0);
         }
     }
+    // A coroutine for moving the player to the next closest platform
+    public IEnumerator LerpPlayer(Vector3 newPosition)
+    {
+        while (isLerping)
+        {
+            transform.position = Vector3.Lerp(transform.position, newPosition, lerpTime);
+        }
+        yield return new WaitForSeconds(0);
+    }
     // Fire raycast to check if player has jumped onto a platform
     public void CheckPlatformLanded()
     {
-        // TODO: Add functionality to check if platform landed upon is an encampment
         RaycastHit hit = new RaycastHit();
         if (Physics.Raycast(transform.position, -Vector3.up, out hit, 10))
         {
-            // If the player lands on an encampment, stop the player being able to move though isAllowedToMove 
-            // Then start the event that tracks input and 
+            // If the player lands on an encampment, stop the player being able to move through isAllowedToMove 
+            // Then start the event that tracks input.
             if (hit.transform.tag == "encampment")
             {
                 isAllowedToMove = false;
@@ -165,6 +197,17 @@ public class MovementScript : MonoBehaviour {
                 if (ShowStance != null)
                 {
                     ShowStance(stances);
+                }
+                // Here detect where the next platform is going to be,
+                // And then fufcking do something about it johnny.
+                platforms = pm.GrabPlatforms();
+                foreach (GameObject go in platforms)
+                {
+                    if (Vector3.Distance(this.gameObject.transform.position, go.transform.position) < distanceToNextPlatform)
+                    {
+                        distanceToNextPlatform = (int)Vector3.Distance(gameObject.transform.position, go.transform.position);
+                        closestPlatform = go;
+                    }
                 }
                 attScript.Attacking(hit.transform.gameObject.GetComponent<StanceScript>());
             }
@@ -183,6 +226,8 @@ public class MovementScript : MonoBehaviour {
     // A function for public use to allow movement to continue
     public void AllowMovement()
     {
+        // A function call that makes the player move to the next platform.
+        MovePlayerAfterAttack();
         isAllowedToMove = true;
     }
     // Subscribe to event function

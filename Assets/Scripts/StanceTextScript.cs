@@ -7,11 +7,13 @@ public class StanceTextScript : MonoBehaviour {
     // Use this for initialization
     void Start(){
         ms = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
+        this.GetComponent<TextMesh>().text = "";
         Subscribe();
     }
     // Function to write the text mesh to a string
     void DisplayStances(string stances)
     {
+        this.GetComponent<TextMesh>().text = "";
         this.GetComponent<TextMesh>().text = stances;
     }
     // Subscribe

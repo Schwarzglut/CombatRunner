@@ -302,21 +302,20 @@ public class PlatformsMovement : MonoBehaviour {
                 lerpTime = 0;
                 isLerping = false;
                 // Called after the position is set to speed up movement.
-                MoveLastRow();
+                MoveLastPlatform();
                 StopAllCoroutines();
             }
             yield return new WaitForSeconds(0);
         }
     }
-    // Move the 3 platforms behind the player to the front
-    public void MoveLastRow()
+    // Move the platform behind the player to the front
+    public void MoveLastPlatform()
     {
         GameObject lastPlatform = null;
         Vector3 playerPosition = new Vector3(0,1,0);
         int position = 0;
         for (int i = 0; i < listOfPlatforms.Length; i++)
         {
-            // UPDATE MOVEMENT SO THAT THE PLATFORMS ALL MOVE INSTEAD OF THE PARENT OBJECT
             if (listOfPlatforms[i].gameObject.transform.localPosition.z < playerPosition.z)
             {
                 listOfPlatforms[i].gameObject.SetActive(false);
@@ -333,6 +332,11 @@ public class PlatformsMovement : MonoBehaviour {
         {
             GeneratePlatformLoop(lastPlatform, newPlatformStartPoint, position);
         }
+    }
+    // Return all the platforms to be cycled through.
+    public GameObject[] GrabPlatforms()
+    {
+        return listOfPlatforms;
     }
     // SUBSCRIPTIONS
     // Subscribe to reset event

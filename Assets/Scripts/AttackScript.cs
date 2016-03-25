@@ -50,7 +50,6 @@ public class AttackScript : MonoBehaviour {
                         {
                             ReduceHealth(20);
                         }
-                        //TODO: Some event that reduces health? 
                     }
                 }
             }
