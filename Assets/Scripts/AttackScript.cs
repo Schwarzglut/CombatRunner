@@ -22,6 +22,7 @@ public class AttackScript : MonoBehaviour {
     {
         stances = new char[ss.GrabStances().Length];
         stances = ss.GrabStances();
+        //Debug.Log("Stances: " + stances[0] + " : " + stances[1] + " : " + stances[2]);
         StartCoroutine(AttackingCoroutine());
     }
     public IEnumerator AttackingCoroutine()

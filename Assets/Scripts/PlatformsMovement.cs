@@ -298,11 +298,11 @@ public class PlatformsMovement : MonoBehaviour {
                {
                     listOfPlatforms[i].transform.position = goPositions[i];
                 }
-                ms.CheckPlatformLanded();
                 lerpTime = 0;
                 isLerping = false;
                 // Called after the position is set to speed up movement.
                 MoveLastPlatform();
+                ms.CheckPlatformLanded();
                 StopAllCoroutines();
             }
             yield return new WaitForSeconds(0);

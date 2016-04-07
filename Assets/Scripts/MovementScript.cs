@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class MovementScript : MonoBehaviour {
     // EVENTS
@@ -39,6 +40,9 @@ public class MovementScript : MonoBehaviour {
     private int distanceToNextPlatform;
     private GameObject closestPlatform;
     private int nextPlatformDirection;
+    private GameObject playerPlatform;
+    private int removeIndex;
+    private List<GameObject> removePlayerPlatformList;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -54,6 +58,9 @@ public class MovementScript : MonoBehaviour {
         isAllowedToMove = true;
         stances = "";
         platforms = new GameObject[6];
+        playerPlatform = new GameObject();
+        removeIndex = -1;
+        removePlayerPlatformList = new List<GameObject>();
         // Value set to 100 so that accurate closest distance can be found
         distanceToNextPlatform = 100;
         nextPlatformDirection = -1;
@@ -131,17 +138,21 @@ public class MovementScript : MonoBehaviour {
     // A function to move the player automatically
     void MovePlayerAfterAttack()
     {
+        Debug.Log("Closest platform: " + closestPlatform.name);
         if (closestPlatform.transform.position.x > this.gameObject.transform.position.x)
         {
             nextPlatformDirection = 1;
+            Debug.Log("Direction = 1");
         }
         else if (closestPlatform.transform.position.x < this.gameObject.transform.position.x)
         {
             nextPlatformDirection = 0;
+            Debug.Log("Direction = 0");
         }
         else
         {
             nextPlatformDirection = -1;
+            Debug.Log("Direction undecided");
         }
         if (nextPlatformDirection >= 0)
         {
@@ -190,6 +201,7 @@ public class MovementScript : MonoBehaviour {
         {
             // If the player lands on an encampment, stop the player being able to move through isAllowedToMove 
             // Then start the event that tracks input.
+            playerPlatform = hit.transform.gameObject;
             if (hit.transform.tag == "encampment")
             {
                 isAllowedToMove = false;
@@ -201,14 +213,35 @@ public class MovementScript : MonoBehaviour {
                 // Here detect where the next platform is going to be,
                 // And then fufcking do something about it johnny.
                 platforms = pm.GrabPlatforms();
+                // Making a list of the platforms to remove the platform the player is standing on.
+                removePlayerPlatformList = new List<GameObject>(platforms);
+                for (int i = 0; i < platforms.Length; i++) {
+                    if (platforms[i].name == playerPlatform.name)
+                    {
+                        removeIndex = i;
+                    }
+                }
+                removePlayerPlatformList.RemoveAt(removeIndex);
+                platforms = removePlayerPlatformList.ToArray();
+                // TEST
+                for (int i = 0; i < platforms.Length; i++)
+                {
+                    Debug.Log("Platforms: " + platforms[i]);
+                }
+                // Remove the platform the player is on.
+                // Reset search variables.
+                closestPlatform = null;
+                distanceToNextPlatform = 100;
                 foreach (GameObject go in platforms)
                 {
+                    Debug.Log("Horse Swamp: " + go.name + " " + Vector3.Distance(this.gameObject.transform.position, go.transform.position));
                     if (Vector3.Distance(this.gameObject.transform.position, go.transform.position) < distanceToNextPlatform)
                     {
                         distanceToNextPlatform = (int)Vector3.Distance(gameObject.transform.position, go.transform.position);
                         closestPlatform = go;
                     }
                 }
+                Debug.Log("Closest platform: " + closestPlatform.name);
                 attScript.Attacking(hit.transform.gameObject.GetComponent<StanceScript>());
             }
         }
