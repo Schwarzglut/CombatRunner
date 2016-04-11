@@ -3,7 +3,7 @@ using System.Collections;
 
 public class StanceScript : MonoBehaviour {
     // Stance variables
-    char[] stanceButtons = new char[2] { 'q', 'e' };
+    char[] stanceButtons = new char[2] { 'a', 'd' };
     char[] stances = new char[0];
     string stancesAsString;
     // Use this for initialization

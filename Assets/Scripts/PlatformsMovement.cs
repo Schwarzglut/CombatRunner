@@ -3,6 +3,7 @@ using System.Collections;
 using System;
 
 public class PlatformsMovement : MonoBehaviour {
+    private GameObject player;
     private GameObject platforms;
     private GameObject[] listOfPlatforms;
     // An array holding the positions of the platforms before they move
@@ -12,7 +13,7 @@ public class PlatformsMovement : MonoBehaviour {
     bool isFirstPlatformActive;
     int newPlatformStartPoint;
 
-    MovementScript ms;
+    MovementScript movScript;
     // Tile type variables
     private int normalTileCount;
     private int encampmentTileCount;
@@ -42,8 +43,10 @@ public class PlatformsMovement : MonoBehaviour {
     private int encampmentTracker;
     // Use this for initialization
     void Start () {
+        // Grabbing the player gameobject
+        player = GameObject.FindGameObjectWithTag("Player");
         // Linking the scripts
-        ms = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
+        movScript = GameObject.FindGameObjectWithTag("Player").GetComponent<MovementScript>();
         // Grab the platforms and assign them to the array of game objects, listOfPlatforms
         platforms = GameObject.FindGameObjectWithTag("platforms");
         // Populate and initialize the array of platforms
@@ -82,7 +85,7 @@ public class PlatformsMovement : MonoBehaviour {
         GeneratePlatforms();
 
         // Subscribe to event
-        Subscribe(ms);
+        Subscribe(movScript);
     }
     void Update()
     {
@@ -104,7 +107,10 @@ public class PlatformsMovement : MonoBehaviour {
         if (!isFirstPlatformActive)
         {
             listOfPlatforms[0].gameObject.SetActive(true);
+            // Stopping from the coin from being active at spawn.
             listOfPlatforms[0].transform.GetChild(2).gameObject.SetActive(false);
+            // Setting the encampment to be active.
+            listOfPlatforms[0].transform.GetChild(0).gameObject.SetActive(true);
             GeneratePlatforms(1);
             isFirstPlatformActive = true;
         }
@@ -230,6 +236,11 @@ public class PlatformsMovement : MonoBehaviour {
     // UPDATE
     void ResetPlatforms() 
     {
+        // Stop any coroutines that might persist.
+        StopAllCoroutines();
+        // Resetting variables
+        player.transform.position = new Vector3(0,1,0);
+        encampmentTracker = 0;
         // Set the platforms back to the stored original positions.
         for (int i = 0; i < listOfPlatforms.Length; i++)
         {
@@ -302,7 +313,7 @@ public class PlatformsMovement : MonoBehaviour {
                 isLerping = false;
                 // Called after the position is set to speed up movement.
                 MoveLastPlatform();
-                ms.CheckPlatformLanded();
+                movScript.CheckPlatformLanded();
                 StopAllCoroutines();
             }
             yield return new WaitForSeconds(0);

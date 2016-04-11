@@ -52,7 +52,7 @@ public class MovementScript : MonoBehaviour {
         isLerpingForward = false;
         // grabbing script 
         pm = GameObject.FindGameObjectWithTag("platforms").GetComponent<PlatformsMovement>();
-        hs = this.GetComponent<HealthScript>();
+        hs = GameObject.FindGameObjectWithTag("health").GetComponent<HealthScript>();
         attScript = this.GetComponent<AttackScript>();
         // stance variables initialization
         isAllowedToMove = true;
@@ -126,10 +126,11 @@ public class MovementScript : MonoBehaviour {
     {
         isLerpingForward = false;
     }
-    // A function to reduce health and reward gold
     // A function to call the reset event
     void ResetFunction()
     {
+        // Allows the player to move again after dying from health loss.
+        ResetMovement();
         if (Reset != null)
         {
             Reset();
@@ -138,27 +139,28 @@ public class MovementScript : MonoBehaviour {
     // A function to move the player automatically
     void MovePlayerAfterAttack()
     {
-        Debug.Log("Closest platform: " + closestPlatform.name);
         if (closestPlatform.transform.position.x > this.gameObject.transform.position.x)
         {
+            // Direction = right.
             nextPlatformDirection = 1;
-            Debug.Log("Direction = 1");
         }
         else if (closestPlatform.transform.position.x < this.gameObject.transform.position.x)
         {
+            // Direction = left.
             nextPlatformDirection = 0;
-            Debug.Log("Direction = 0");
         }
         else
         {
+            // Direction undecided - basically forward.
             nextPlatformDirection = -1;
-            Debug.Log("Direction undecided");
         }
+        // If a direction has been chosen lerp left or right towards it.
         if (nextPlatformDirection >= 0)
         {
             isLerping = true;
             StartCoroutine(LerpSideways(new Vector3(closestPlatform.transform.position.x, 1, 0), nextPlatformDirection));
         }
+        // This is outside of the previous if statement so that if no direction is chosen it still moves forward.
         if (Move != null)
         {
             Move();
@@ -223,28 +225,22 @@ public class MovementScript : MonoBehaviour {
                 }
                 removePlayerPlatformList.RemoveAt(removeIndex);
                 platforms = removePlayerPlatformList.ToArray();
-                // TEST
-                for (int i = 0; i < platforms.Length; i++)
-                {
-                    Debug.Log("Platforms: " + platforms[i]);
-                }
                 // Remove the platform the player is on.
                 // Reset search variables.
                 closestPlatform = null;
                 distanceToNextPlatform = 100;
                 foreach (GameObject go in platforms)
                 {
-                    Debug.Log("Horse Swamp: " + go.name + " " + Vector3.Distance(this.gameObject.transform.position, go.transform.position));
                     if (Vector3.Distance(this.gameObject.transform.position, go.transform.position) < distanceToNextPlatform)
                     {
                         distanceToNextPlatform = (int)Vector3.Distance(gameObject.transform.position, go.transform.position);
                         closestPlatform = go;
                     }
                 }
-                Debug.Log("Closest platform: " + closestPlatform.name);
                 attScript.Attacking(hit.transform.gameObject.GetComponent<StanceScript>());
             }
         }
+        // If the player misses a platform reset everything.
         if (!(Physics.Raycast(transform.position, -Vector3.up, out hit, 10)))
         {
             // If the event has a listener fire the event.
@@ -252,7 +248,6 @@ public class MovementScript : MonoBehaviour {
             {
                 Reset();
             }
-            // Reset the position of the player.
             transform.position = new Vector3(0, 1, 0);
         }
     }
@@ -261,6 +256,10 @@ public class MovementScript : MonoBehaviour {
     {
         // A function call that makes the player move to the next platform.
         MovePlayerAfterAttack();
+        isAllowedToMove = true;
+    }
+    public void ResetMovement()
+    {
         isAllowedToMove = true;
     }
     // Subscribe to event function
