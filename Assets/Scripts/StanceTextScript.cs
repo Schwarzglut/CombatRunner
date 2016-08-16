@@ -5,7 +5,6 @@ using UnityEngine.UI;
 public class StanceTextScript : MonoBehaviour {
     private GameObject player;
 
-    private GameObject stanceText;
     private MovementScript movScript;
     private AttackScript attScript;
     private HealthScript healScript;
@@ -21,16 +20,12 @@ public class StanceTextScript : MonoBehaviour {
         movScript = player.GetComponent<MovementScript>();
         attScript = player.GetComponent<AttackScript>();
         healScript = GameObject.FindGameObjectWithTag("health").GetComponent<HealthScript>();
-        //GetComponent<UnityEngine.UI.Text>().text = "";
         Subscribe();
     }
     // Function to write the text mesh to a string
     void DisplayStances(string stances)
     {
-        /*GetComponent<UnityEngine.UI.Text>().text = "";
-        GetComponent<UnityEngine.UI.Text>().text = stances;*/
         // Loop through the stances and change the image in either left,mid or right based on the string stances.
-        Debug.Log(stances.Length);
         SetStanceImages(stances.Length);
         for (int i = 0; i < stances.Length; i++)
         {
@@ -47,7 +42,6 @@ public class StanceTextScript : MonoBehaviour {
     // A function to clear the stance text
     void ClearStances()
     {
-        //GetComponent<UnityEngine.UI.Text>().text = "";
         ResetStancesImages();
         movScript.ResetStanceBackgroundImage();
     }
