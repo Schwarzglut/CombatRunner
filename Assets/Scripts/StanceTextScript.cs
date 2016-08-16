@@ -27,6 +27,7 @@ public class StanceTextScript : MonoBehaviour {
     void ClearStances()
     {
         GetComponent<UnityEngine.UI.Text>().text = "";
+        movScript.ResetStanceBackgroundImage();
     }
     // Subscribe
     void Subscribe()

@@ -17,6 +17,7 @@ public class StanceScript : MonoBehaviour {
     // A function to generate the stances of an encampment
     public void GenerateStances(int encampmentNumber)
     {
+        // TODO: Possibly take the encampment number as a way to display the different stance backgrounds................................
         stancesAsString = "";
         // Depending on the encampment number generate different lengths of stances.
         if (encampmentNumber == 1)

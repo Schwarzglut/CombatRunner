@@ -43,6 +43,8 @@ public class MovementScript : MonoBehaviour {
     private GameObject playerPlatform;
     private int removeIndex;
     private List<GameObject> removePlayerPlatformList;
+    // An UI image of the stance background 
+    public GameObject stanceBackground;
     void Start() {
         // lerping variable initialization
         lerpTime = 0;
@@ -207,6 +209,8 @@ public class MovementScript : MonoBehaviour {
             if (hit.transform.tag == "encampment")
             {
                 isAllowedToMove = false;
+                // Display the stances background NOTE: Must be improved to take into account the length of the stance attack.
+                stanceBackground.SetActive(true);
                 stances = hit.transform.gameObject.GetComponent<StanceScript>().GrabStancesAsString();
                 if (ShowStance != null)
                 {
@@ -261,6 +265,11 @@ public class MovementScript : MonoBehaviour {
     public void ResetMovement()
     {
         isAllowedToMove = true;
+    }
+    // A method for resetting the active state of the stance background image
+    public void ResetStanceBackgroundImage()
+    {
+        stanceBackground.SetActive(false);
     }
     // Subscribe to event function
     public void Subscribe()
