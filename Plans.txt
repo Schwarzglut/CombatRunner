@@ -1,0 +1,7 @@
+Make platforms animations
+Add like encampments and villages and stuff to the sides of the background image
+Make the background image scroll with the player moving forward (Loop around)
+Change stance pop up to make stance background size based on length of stance attack
+Make stance background animation
+Try out change to Q and E
+Look up touch controls, swipe left and right and forward, tap left and right for attacks
